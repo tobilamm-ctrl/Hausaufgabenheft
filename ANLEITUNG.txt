@@ -1,8 +1,8 @@
-SCHULPLANER (SCHÜLER-APP FÜRS IPAD) – ANLEITUNG
-===============================================
+HAUSAUFGABENHEFT (SCHÜLER-APP FÜRS IPAD) – ANLEITUNG
+====================================================
 
-Was ist der Schulplaner?
-------------------------
+Was ist das Hausaufgabenheft?
+-----------------------------
 Eine kleine App für die Schüler-iPads: Stundenplan ansehen, Hausaufgabenheft
 mit Abhaken, Proben mit Countdown und eigene Notizen. Die Lehrkraft schickt
 Stundenplan, Hausaufgaben und Proben aus dem Klassenmanager per QR-Code.
@@ -18,10 +18,10 @@ Datenschutz
 
 1. Einmalig: online stellen (z. B. GitHub Pages)
 ------------------------------------------------
-Genauso wie beim Klassenmanager, aber als EIGENES Repository, z. B. „schulplaner“:
+Genauso wie beim Klassenmanager, aber als EIGENES Repository, z. B. „hausaufgabenheft“ (ein schon angelegtes Repository „schulplaner“ kann einfach bleiben):
 Den INHALT dieses Ordners hochladen (index.html, manifest.webmanifest, sw.js,
 Ordner icons) → Settings → Pages → Branch „main“, „/ (root)“ → Save.
-Adresse dann z. B.: https://DEINNAME.github.io/schulplaner/
+Adresse dann z. B.: https://DEINNAME.github.io/hausaufgabenheft/
 
 Tipp: Die Adresse als QR-Code an die Tafel zeigen, dann müssen die Kinder sie
 nicht abtippen.
@@ -43,7 +43,7 @@ IT-Betreuung die Adresse als Web-App direkt auf alle iPads verteilen.
 ------------------------------------------------
 Im Klassenmanager (Stundenplan oder Klassenliste): „📲 An Schüler“ →
 auswählen, was geschickt werden soll → „⛶ Groß anzeigen“ (für den Beamer).
-Die Kinder tippen im Schulplaner auf „📷 Empfangen“ und halten das iPad auf
+Die Kinder tippen im Hausaufgabenheft auf „📷 Empfangen“ und halten das iPad auf
 den Code. Bei viel Inhalt wechseln mehrere Codes automatisch – einfach
 draufhalten, bis „Übernehmen“ erscheint.
 
@@ -64,7 +64,8 @@ draufhalten, bis „Übernehmen“ erscheint.
 - ⚙ → Sicherung speichern/laden (z. B. bei neuem iPad) oder alle Daten löschen
 
 Abgehakte Hausaufgaben bleiben (mit Häkchen) stehen, bis der Abgabetag erreicht
-ist (13 Uhr), dann wandern sie unter „Erledigt“. Proben verschwinden am
+ist (13 Uhr), dann wandern sie unter „Erledigt“. Überfällige, nicht abgehakte
+Hausaufgaben bleiben neben dem Stundenplan sichtbar, bis sie abgehakt sind. Proben verschwinden am
 Probentag um 13 Uhr. Ferien und Feiertage (Bayern) sind im Stundenplan grau.
 
 
@@ -77,3 +78,12 @@ Internet da ist. Die Versionsnummer steht unter ⚙.
 Falls doch noch die alte Version erscheint: App ganz schließen (vom unteren
 Rand nach oben wischen, App nach oben wegschieben) und neu öffnen.
 
+
+
+6. Neuer Name
+-------------
+Die App heißt jetzt „Hausaufgabenheft“. Auf iPads, auf denen sie schon
+installiert ist, bleibt der alte Name unter dem Symbol stehen (iPadOS übernimmt
+ihn nur beim Hinzufügen). Wer den neuen Namen möchte: Sicherung speichern (⚙),
+Symbol löschen, über Safari neu „Zum Home-Bildschirm“ hinzufügen, Sicherung laden.
+Die Einträge bleiben aber auch ohne das erhalten.

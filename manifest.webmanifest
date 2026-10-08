@@ -1,6 +1,6 @@
 {
-  "name": "Schulplaner",
-  "short_name": "Schulplaner",
+  "name": "Hausaufgabenheft",
+  "short_name": "Hausaufgabenheft",
   "description": "Stundenplan, Hausaufgaben und Proben – alle Einträge bleiben auf diesem iPad.",
   "lang": "de",
   "start_url": "./",
