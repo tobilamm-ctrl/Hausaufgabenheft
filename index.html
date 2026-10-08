@@ -27,6 +27,20 @@
   button.ghost { border-color: transparent; background: transparent; }
   input, select, textarea { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fff; min-height: 46px; width: 100%; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  input, select, textarea { min-width: 0; max-width: 100%; }
+  input[type=date] { -webkit-appearance: none; appearance: none; display: block; line-height: 1.3; text-align: left; }
+  input[type=date]::-webkit-date-and-time-value { text-align: left; }
+  label.f { min-width: 0; }
+  .form { display: grid; gap: 10px; align-items: end; }
+  .form.hw { grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.2fr) auto; }
+  .form.ex { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 2.4fr) auto; }
+  .dlg .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .dlg .row.one { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 900px) {
+    .form.hw, .form.ex { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .form.hw label:nth-child(2), .form.ex label:nth-child(3) { grid-column: 1 / -1; }
+    .form .add { grid-column: 1 / -1; }
+  }
   label.f { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); font-weight: 600; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px 40px; }
   header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -74,6 +88,8 @@
   .part span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .parts.two .part { font-size: .85rem; cursor: pointer; }
   .parts.two .part.dim { flex: 0 0 26%; opacity: .35; font-size: .7rem; }
+  .tt td.c.ab { position: relative; }
+  .tt .abm { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); background: var(--sun); border-radius: 999px; padding: 0 7px; font-size: .7rem; font-weight: 800; line-height: 15px; pointer-events: none; }
   .parts.two .part.mine { box-shadow: inset 0 -4px 0 var(--sc), inset 0 0 0 2px var(--sc); }
 
   /* Listen */
@@ -135,11 +151,11 @@
   <section id="pHW" hidden>
     <div class="card">
       <h2>Neue Hausaufgabe</h2>
-      <div class="row">
-        <label class="f" style="flex:1 1 170px">Fach<select id="hwSubj" class="subjsel"></select></label>
-        <label class="f" style="flex:3 1 260px">Aufgabe<input id="hwText" placeholder="z. B. Buch S. 34 Nr. 2–5" enterkeyhint="done"></label>
-        <label class="f" style="flex:1 1 150px">bis<input type="date" id="hwDue"></label>
-        <button class="primary" id="hwAdd">Eintragen</button>
+      <div class="form hw">
+        <label class="f">Fach<select id="hwSubj" class="subjsel"></select></label>
+        <label class="f">Aufgabe<input id="hwText" placeholder="z. B. Buch S. 34 Nr. 2–5" enterkeyhint="done"></label>
+        <label class="f">bis<input type="date" id="hwDue"></label>
+        <button class="primary add" id="hwAdd">Eintragen</button>
       </div>
     </div>
     <div id="hwList"></div>
@@ -148,11 +164,11 @@
   <section id="pEX" hidden>
     <div class="card">
       <h2>Neue Probe</h2>
-      <div class="row">
-        <label class="f" style="flex:1 1 150px">Datum<input type="date" id="exDate"></label>
-        <label class="f" style="flex:1 1 170px">Fach<select id="exSubj" class="subjsel"></select></label>
-        <label class="f" style="flex:3 1 240px">Thema<input id="exText" placeholder="z. B. Bruchrechnen, Diktat" enterkeyhint="done"></label>
-        <button class="primary" id="exAdd">Eintragen</button>
+      <div class="form ex">
+        <label class="f">Datum<input type="date" id="exDate"></label>
+        <label class="f">Fach<select id="exSubj" class="subjsel"></select></label>
+        <label class="f">Thema<input id="exText" placeholder="z. B. Bruchrechnen, Diktat" enterkeyhint="done"></label>
+        <button class="primary add" id="exAdd">Eintragen</button>
       </div>
     </div>
     <div id="exList"></div>
@@ -167,8 +183,8 @@
       <label class="f">Fach<select id="edSubj" class="subjsel"></select></label>
       <label class="f"><span id="edDateLbl">bis</span><input type="date" id="edDate"></label>
     </div>
-    <div class="row"><label class="f"><span id="edTextLbl">Aufgabe</span><input id="edText"></label></div>
-    <div class="row"><label class="f">Meine Notiz<textarea id="edNote" rows="3" placeholder="z. B. Heft vergessen, Frage an die Lehrkraft, Seite 12 lernen …"></textarea></label></div>
+    <div class="row one"><label class="f"><span id="edTextLbl">Aufgabe</span><input id="edText"></label></div>
+    <div class="row one"><label class="f">Meine Notiz<textarea id="edNote" rows="3" placeholder="z. B. Heft vergessen, Frage an die Lehrkraft, Seite 12 lernen …"></textarea></label></div>
     <div class="hint" id="edFrom"></div>
     <div class="btns"><button class="danger l" id="edDel">Löschen</button><button id="edCancel">Abbrechen</button><button class="primary" id="edSave">Speichern</button></div>
   </div>
@@ -190,7 +206,7 @@
     <p class="hint" style="margin-top:0">Alle Einträge bleiben nur auf diesem iPad. Es wird nichts ins Internet geschickt.</p>
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
     <p class="hint">Die Sicherung ist eine Datei, z. B. zum Umziehen auf ein neues iPad.</p>
-    <div class="row"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
+    <div class="row one"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -259,12 +275,21 @@ document.addEventListener('change', e => {
 }, true);
 
 // nächster Schultag (ab morgen), an dem das Fach im Stundenplan steht
+// Geteilte Stunden: Gruppe wählen; bei 14-täglichem Wechsel (vom Lehrer markiert) wählt man, welches Fach man in einer bestimmten Woche hat
+const weekParity = (ref, monday) => (((Math.round((new Date(monday + 'T00:00') - new Date(ref + 'T00:00')) / 6048e5)) % 2) + 2) % 2;
+const mondayOf = ds => addDays(ds, -weekdayIdx(new Date(ds + 'T00:00')));
+const isAB = key => !!(S.tt && S.tt.ab && S.tt.ab[key]) && cellArr(S.tt.cells[key]).length > 1;
+function mineFor(key, monday) {
+  const ids = cellArr(S.tt.cells[key]), g = S.grp[key]; if (ids.length < 2 || !g) return null;
+  if (isAB(key)) { if (typeof g !== 'object' || !ids.includes(g.id)) return null; return weekParity(g.wk, monday) ? ids.find(x => x !== g.id) : g.id; }
+  return typeof g === 'string' && ids.includes(g) ? g : null;
+}
 function nextLesson(name) {
   const s = subjByName(name); if (!s) return '';
   for (let n = 1; n <= 21; n++) {
     const ds = addDays(todayStr(), n), wd = weekdayIdx(new Date(ds + 'T00:00'));
     if (wd > (S.tt.sat ? 5 : 4)) continue;
-    if (S.tt.slots.some((sl, i) => !sl.pause && cellArr(S.tt.cells[wd + '|' + i]).includes(s.id))) return ds;
+    if (S.tt.slots.some((sl, i) => { if (sl.pause) return false; const k = wd + '|' + i, m = mineFor(k, mondayOf(ds)); return (m ? [m] : cellArr(S.tt.cells[k])).includes(s.id); })) return ds;
   }
   return '';
 }
@@ -299,22 +324,23 @@ function renderTT() {
   const head = `<tr><th></th>${days.map(d => { const ds = addDays(monday, d);
     const ex = S.ex.filter(x => !x.hidden && x.date === ds), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
     return `<th class="${thisWeek && d === today ? 'today' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${ex.map(x => `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
-  let split = false;
+  let split = false, abSeen = false;
   const body = tt.slots.map((sl, i) => {
     const cur = thisWeek && sl.start && sl.end && hm >= sl.start && hm < sl.end;
     const tm = `<td class="tm${cur ? ' now' : ''}"><b>${esc(sl.label)}</b>${esc(sl.start)}${sl.end ? '–' + esc(sl.end) : ''}</td>`;
     if (sl.pause) return `<tr class="pause">${tm}<td class="pz" colspan="${days.length}">${esc(sl.label)}</td></tr>`;
     return `<tr>${tm}${days.map(d => {
       const key = d + '|' + i, ids = cellArr(tt.cells[key]), ss = ids.map(id => tt.subjects.find(s => s.id === id)).filter(Boolean), td = thisWeek && d === today;
-      if (ss.length > 1) split = true;
-      const mine = S.grp[key];
+      const ab = ss.length > 1 && isAB(key); if (ab) abSeen = true; else if (ss.length > 1) split = true;
+      const mine = mineFor(key, monday);
       const parts = ss.map(s => `<div class="part${ss.length > 1 && mine ? (mine === s.id ? ' mine' : ' dim') : ''}" style="--sc:${s.color}" title="${esc(s.name)}"><span>${esc(s.name)}</span></div>`).join('');
-      return `<td class="c${ss.length ? ' full' : ''}${td ? ' today' : ''}${td && cur ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}</td>`;
+      return `<td class="c${ss.length ? ' full' : ''}${ab ? ' ab' : ''}${td ? ' today' : ''}${td && cur ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}${ab ? '<span class="abm">⇄</span>' : ''}</td>`;
     }).join('')}</tr>`;
   }).join('');
   $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button></div>
     <div class="ttscroll"><table class="tt">${head}${body}</table></div>
-    ${split ? '<p class="hint">Geteilte Stunde: Tippe darauf, um deine Gruppe zu wählen.</p>' : ''}`;
+    ${split ? '<p class="hint">Geteilte Stunde: Tippe darauf, um deine Gruppe zu wählen.</p>' : ''}
+    ${abSeen ? '<p class="hint"><b>⇄ = 14-täglicher Wechsel:</b> Tippe auf die Stunde und wähle, welches Fach du in <b>dieser</b> Woche hast. Ab dann wechselt es automatisch jede Woche.</p>' : ''}`;
 }
 $('ttCard').addEventListener('click', e => {
   if (e.target.closest('#wkPrev')) { ui.week--; return renderTT(); }
@@ -322,8 +348,14 @@ $('ttCard').addEventListener('click', e => {
   if (e.target.closest('#wkLbl')) { ui.week = 0; return renderTT(); }
   const td = e.target.closest('td.c'); if (!td) return;
   const ids = cellArr(S.tt.cells[td.dataset.key]); if (ids.length < 2) return;
-  const cur = S.grp[td.dataset.key], i = ids.indexOf(cur);
-  if (i === ids.length - 1) delete S.grp[td.dataset.key]; else S.grp[td.dataset.key] = ids[i + 1];   // keine → 1. Gruppe → 2. Gruppe → keine
+  const key = td.dataset.key, monday = addDays(todayStr(), -weekdayIdx(new Date()) + 7 * ui.week);
+  const i = ids.indexOf(mineFor(key, monday)), next = i === ids.length - 1 ? null : ids[i + 1];   // keine → 1. Fach → 2. Fach → keine
+  if (!next) delete S.grp[key];
+  else if (isAB(key)) {
+    S.grp[key] = { id: next, wk: monday };
+    const nm = id => { const s = S.tt.subjects.find(x => x.id === id); return s ? s.name : ''; };
+    toast(`Diese Woche ${nm(next)}, nächste Woche ${nm(ids.find(x => x !== next))}`);
+  } else S.grp[key] = next;
   save(); renderTT();
 });
 
@@ -518,7 +550,11 @@ $('impOk').addEventListener('click', () => {
   if (P.cls) S.cls = P.cls;
   if (P.tt) {
     const old = S.tt, tt = { sat: !!P.tt.sat, slots: P.tt.sl.map(([label, start, end, pz]) => ({ label, start, end, pause: !!pz })), subjects: P.tt.su.map(([id, name, color]) => ({ id, name, color })), cells: P.tt.c || {} };
-    Object.keys(S.grp).forEach(k => { if (!cellArr(tt.cells[k]).includes(S.grp[k])) delete S.grp[k]; });   // Gruppenwahl behalten, wenn die Stunde gleich bleibt
+    tt.ab = P.tt.ab || {};
+    Object.keys(S.grp).forEach(k => {   // Wahl behalten, wenn die Stunde gleich bleibt
+      const g = S.grp[k], ids = cellArr(tt.cells[k]), ab = !!tt.ab[k] && ids.length > 1;
+      if (ab ? !(g && typeof g === 'object' && ids.includes(g.id)) : !(typeof g === 'string' && ids.includes(g))) delete S.grp[k];
+    });   // Gruppenwahl behalten, wenn die Stunde gleich bleibt
     S.tt = tt; void old;
   }
   let nHw = 0, nEx = 0;
