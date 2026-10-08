@@ -207,6 +207,7 @@
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
     <p class="hint">Die Sicherung ist eine Datei, z. B. zum Umziehen auf ein neues iPad.</p>
     <div class="row one"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
+    <p class="hint">Version 2026-10-08</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -612,7 +613,11 @@ $('hwDue').value = '';
 setTab(ui.tab);
 setInterval(() => { if (document.visibilityState === 'visible') render(); }, 60000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') render(); });
-if ((location.protocol === 'https:' || location.hostname === 'localhost') && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ((location.protocol === 'https:' || location.hostname === 'localhost') && 'serviceWorker' in navigator) {
+  // neue Version: Service Worker sofort aktualisieren und Seite einmal neu laden
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { r.update().catch(() => {}); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
+  if (navigator.serviceWorker.controller) { let done = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!done) { done = true; location.reload(); } }); }
+}
 </script>
 <script>
 /* QR-Code-Erkennung: jsQR 1.4.0 · (c) Cosmo Wolfe · Apache-Lizenz 2.0 */
