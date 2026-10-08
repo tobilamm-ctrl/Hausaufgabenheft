@@ -63,11 +63,17 @@ draufhalten, bis „Übernehmen“ erscheint.
 - im Stundenplan wochenweise blättern
 - ⚙ → Sicherung speichern/laden (z. B. bei neuem iPad) oder alle Daten löschen
 
-Proben verschwinden am Probentag um 13 Uhr aus der Liste, erledigte
-Hausaufgaben nach 30 Tagen.
+Abgehakte Hausaufgaben bleiben (mit Häkchen) stehen, bis der Abgabetag erreicht
+ist (13 Uhr), dann wandern sie unter „Erledigt“. Proben verschwinden am
+Probentag um 13 Uhr. Ferien und Feiertage (Bayern) sind im Stundenplan grau.
 
 
 5. Aktualisieren
-----------------
-Neue index.html hochladen – die iPads holen sich die neue Version im
-Hintergrund; ab dem übernächsten Start ist sie aktiv. Die Einträge bleiben.
+-------------
+Neue index.html bei GitHub hochladen (gleicher Name). Nach 1–2 Minuten ist sie
+online (GitHub → Reiter „Actions“: grüner Haken = fertig).
+Ab dieser Version lädt die App beim Start immer die neueste Fassung, sobald
+Internet da ist. Die Versionsnummer steht unter ⚙.
+Falls doch noch die alte Version erscheint: App ganz schließen (vom unteren
+Rand nach oben wischen, App nach oben wegschieben) und neu öffnen.
+

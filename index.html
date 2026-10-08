@@ -74,7 +74,7 @@
   .tt th .dt { display: block; font-weight: 400; font-size: .75rem; }
   .tt th .b { display: block; margin: 3px auto 0; width: fit-content; max-width: 100%; border-radius: 999px; padding: 1px 8px; font-size: .72rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tt th .b.ex { background: var(--red); } .tt th .b.hw { background: var(--accent); }
-  .tt td.tm { width: 74px; text-align: center; font-size: .75rem; color: var(--muted); }
+  .tt td.tm { width: 54px; text-align: center; font-size: .75rem; color: var(--muted); }
   .tt td.tm b { display: block; font-size: .95rem; color: var(--ink); }
   .tt td.tm.now { background: var(--sun-soft); border-radius: 8px; }
   .tt tr.pause td.pz { text-align: center; font-size: .75rem; color: var(--muted); background: repeating-linear-gradient(135deg, #f3f3f0 0 8px, #fafaf8 8px 16px); border-radius: 8px; padding: 2px; }
@@ -92,6 +92,17 @@
   .tt .abm { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); background: var(--sun); border-radius: 999px; padding: 0 7px; font-size: .7rem; font-weight: 800; line-height: 15px; pointer-events: none; }
   .parts.two .part.mine { box-shadow: inset 0 -4px 0 var(--sc), inset 0 0 0 2px var(--sc); }
 
+  .tt th.off { color: #9aa0a6; } .tt th .b.fr { background: #e5e7eb; color: #4b5563; }
+  .tt td.c.off { background: repeating-linear-gradient(135deg, #f1f1ef 0 6px, #e9e9e6 6px 12px); border-color: #e2e2df; }
+  .tt td.c.off .part { filter: grayscale(1); opacity: .45; }
+  @media (min-width: 1000px) {
+    .wrap { max-width: 1360px; }
+    .ttlay:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    .ttlay .soonbox { position: sticky; top: 8px; max-height: calc(100vh - 30px); overflow: auto; }
+    .ttlay .soonbox .it { padding: 8px 10px; gap: 8px; } .ttlay .soonbox .it .ck { width: 32px; height: 32px; }
+    .ttlay table.tt { min-width: 560px; }
+  }
+  .tt td.tm { width: 54px; } .tt td.tm small { display: block; font-size: .68rem; line-height: 1.15; }
   /* Listen */
   .grp > b { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
   .grp.over > b { color: var(--red); } .grp.today > b { color: var(--accent); }
@@ -143,9 +154,9 @@
     <button data-t="ex">📝 Proben<span class="badge" id="exBadge" hidden></span></button>
   </nav>
 
-  <section id="pTT">
+  <section id="pTT" class="ttlay">
     <div class="card" id="ttCard"></div>
-    <div class="card"><h2>Demnächst</h2><div id="soon"></div></div>
+    <div class="card soonbox"><h2>Demnächst</h2><div id="soon"></div></div>
   </section>
 
   <section id="pHW" hidden>
@@ -207,7 +218,7 @@
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
     <p class="hint">Die Sicherung ist eine Datei, z. B. zum Umziehen auf ein neues iPad.</p>
     <div class="row one"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
-    <p class="hint">Version 2026-10-08</p>
+    <p class="hint">Version 2026-10-09</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -276,6 +287,30 @@ document.addEventListener('change', e => {
 }, true);
 
 // nächster Schultag (ab morgen), an dem das Fach im Stundenplan steht
+/* ---------- Bayern: Schulferien (Kultusministerium) und gesetzliche Feiertage ---------- */
+const FERIEN_BY = [
+  ['2026-08-03', '2026-09-14', 'Sommerferien'], ['2026-11-02', '2026-11-06', 'Herbstferien'], ['2026-11-18', '2026-11-18', 'Buß- und Bettag'],
+  ['2026-12-24', '2027-01-08', 'Weihnachtsferien'], ['2027-02-08', '2027-02-12', 'Frühjahrsferien'], ['2027-03-22', '2027-04-02', 'Osterferien'],
+  ['2027-05-18', '2027-05-28', 'Pfingstferien'], ['2027-08-02', '2027-09-13', 'Sommerferien']];
+const _feiertage = {};
+function feiertageBY(y) {
+  if (_feiertage[y]) return _feiertage[y];
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
+    h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+    mon = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  const os = y + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0'), o = n => addDays(os, n);
+  return (_feiertage[y] = {
+    [y + '-01-01']: 'Neujahr', [y + '-01-06']: 'Heilige Drei Könige', [o(-2)]: 'Karfreitag', [o(1)]: 'Ostermontag', [y + '-05-01']: 'Tag der Arbeit',
+    [o(39)]: 'Christi Himmelfahrt', [o(50)]: 'Pfingstmontag', [o(60)]: 'Fronleichnam', [y + '-08-15']: 'Mariä Himmelfahrt',
+    [y + '-10-03']: 'Tag der Deutschen Einheit', [y + '-11-01']: 'Allerheiligen', [y + '-12-25']: '1. Weihnachtstag', [y + '-12-26']: '2. Weihnachtstag'
+  });
+}
+// Name des unterrichtsfreien Tags (Feiertag oder Ferien) – sonst ''
+function freeDay(ds) {
+  const f = feiertageBY(+ds.slice(0, 4))[ds]; if (f) return f;
+  const fe = FERIEN_BY.find(([a, b]) => ds >= a && ds <= b); return fe ? fe[2] : '';
+}
+
 // Geteilte Stunden: Gruppe wählen; bei 14-täglichem Wechsel (vom Lehrer markiert) wählt man, welches Fach man in einer bestimmten Woche hat
 const weekParity = (ref, monday) => (((Math.round((new Date(monday + 'T00:00') - new Date(ref + 'T00:00')) / 6048e5)) % 2) + 2) % 2;
 const mondayOf = ds => addDays(ds, -weekdayIdx(new Date(ds + 'T00:00')));
@@ -287,9 +322,9 @@ function mineFor(key, monday) {
 }
 function nextLesson(name) {
   const s = subjByName(name); if (!s) return '';
-  for (let n = 1; n <= 21; n++) {
+  for (let n = 1; n <= 60; n++) {
     const ds = addDays(todayStr(), n), wd = weekdayIdx(new Date(ds + 'T00:00'));
-    if (wd > (S.tt.sat ? 5 : 4)) continue;
+    if (wd > (S.tt.sat ? 5 : 4) || freeDay(ds)) continue;
     if (S.tt.slots.some((sl, i) => { if (sl.pause) return false; const k = wd + '|' + i, m = mineFor(k, mondayOf(ds)); return (m ? [m] : cellArr(S.tt.cells[k])).includes(s.id); })) return ds;
   }
   return '';
@@ -324,18 +359,20 @@ function renderTT() {
   const kw = 1 + Math.round(((th - y1) / 864e5 - 3 + (y1.getDay() + 6) % 7) / 7);
   const head = `<tr><th></th>${days.map(d => { const ds = addDays(monday, d);
     const ex = S.ex.filter(x => !x.hidden && x.date === ds), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
-    return `<th class="${thisWeek && d === today ? 'today' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${ex.map(x => `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
+    const fr = freeDay(ds);
+    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
   let split = false, abSeen = false;
   const body = tt.slots.map((sl, i) => {
     const cur = thisWeek && sl.start && sl.end && hm >= sl.start && hm < sl.end;
-    const tm = `<td class="tm${cur ? ' now' : ''}"><b>${esc(sl.label)}</b>${esc(sl.start)}${sl.end ? '–' + esc(sl.end) : ''}</td>`;
+    const tm = `<td class="tm${cur ? ' now' : ''}"><b>${esc(sl.label)}</b><small>${esc(sl.start)}${sl.end ? '–<br>' + esc(sl.end) : ''}</small></td>`;
     if (sl.pause) return `<tr class="pause">${tm}<td class="pz" colspan="${days.length}">${esc(sl.label)}</td></tr>`;
     return `<tr>${tm}${days.map(d => {
+      const off = !!freeDay(addDays(monday, d));
       const key = d + '|' + i, ids = cellArr(tt.cells[key]), ss = ids.map(id => tt.subjects.find(s => s.id === id)).filter(Boolean), td = thisWeek && d === today;
       const ab = ss.length > 1 && isAB(key); if (ab) abSeen = true; else if (ss.length > 1) split = true;
       const mine = mineFor(key, monday);
       const parts = ss.map(s => `<div class="part${ss.length > 1 && mine ? (mine === s.id ? ' mine' : ' dim') : ''}" style="--sc:${s.color}" title="${esc(s.name)}"><span>${esc(s.name)}</span></div>`).join('');
-      return `<td class="c${ss.length ? ' full' : ''}${ab ? ' ab' : ''}${td ? ' today' : ''}${td && cur ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}${ab ? '<span class="abm">⇄</span>' : ''}</td>`;
+      return `<td class="c${ss.length ? ' full' : ''}${ab ? ' ab' : ''}${off ? ' off' : ''}${td ? ' today' : ''}${td && cur && !off ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}${ab ? '<span class="abm">⇄</span>' : ''}</td>`;
     }).join('')}</tr>`;
   }).join('');
   $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button></div>
@@ -385,7 +422,8 @@ function hwGroups(list) {
 }
 function renderHW() {
   if (document.activeElement !== $('hwSubj')) fillSubj($('hwSubj'), $('hwSubj').value);
-  const open = S.hw.filter(h => !h.hidden && !h.done), done = S.hw.filter(h => !h.hidden && h.done).sort((a, b) => (b.due || '').localeCompare(a.due || ''));
+  const gone = h => h.done && (!h.due || !stillCurrent(h.due));   // abgehakt bleibt stehen, bis der Abgabetag (13 Uhr) erreicht ist
+  const open = S.hw.filter(h => !h.hidden && !gone(h)), done = S.hw.filter(h => !h.hidden && gone(h)).sort((a, b) => (b.due || '').localeCompare(a.due || ''));
   $('hwList').innerHTML = (open.length ? hwGroups(open) : '<div class="card empty"><b>Alles erledigt! 🎉</b>Keine offenen Hausaufgaben.</div>')
     + (done.length ? `<details class="donebox"><summary>Erledigt (${done.length})</summary>${done.map(h => itemHtml(h, 'hw')).join('')}</details>` : '');
 }
@@ -397,7 +435,7 @@ function renderEX() {
 }
 function renderSoon() {
   const t = todayStr(), end = addDays(t, 7);
-  const hw = S.hw.filter(h => !h.hidden && !h.done && h.due && h.due <= end && stillCurrent(h.due)).map(h => ({ d: h.due, k: 'hw', h }));
+  const hw = S.hw.filter(h => !h.hidden && h.due && h.due <= end && stillCurrent(h.due)).map(h => ({ d: h.due, k: 'hw', h }));
   const ex = S.ex.filter(x => !x.hidden && x.date <= end && stillCurrent(x.date)).map(x => ({ d: x.date, k: 'ex', h: x }));
   const all = [...ex, ...hw].sort((a, b) => a.d.localeCompare(b.d));
   if (!all.length) { $('soon').innerHTML = '<p class="hint">In den nächsten 7 Tagen steht nichts an.</p>'; return; }
