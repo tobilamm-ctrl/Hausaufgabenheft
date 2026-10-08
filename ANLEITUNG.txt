@@ -1,0 +1,73 @@
+SCHULPLANER (SCHÜLER-APP FÜRS IPAD) – ANLEITUNG
+===============================================
+
+Was ist der Schulplaner?
+------------------------
+Eine kleine App für die Schüler-iPads: Stundenplan ansehen, Hausaufgabenheft
+mit Abhaken, Proben mit Countdown und eigene Notizen. Die Lehrkraft schickt
+Stundenplan, Hausaufgaben und Proben aus dem Klassenmanager per QR-Code.
+
+Datenschutz
+-----------
+- Alle Einträge bleiben NUR auf dem jeweiligen iPad (im Speicher der App).
+- Es wird nichts ins Internet geschickt, es gibt kein Konto und keinen Server.
+- Die QR-Codes enthalten keine Schülernamen – nur Stundenplan, Hausaufgaben
+  und Proben der Klasse.
+- Der Kamerazugriff wird nur beim Scannen genutzt; es werden keine Bilder gespeichert.
+
+
+1. Einmalig: online stellen (z. B. GitHub Pages)
+------------------------------------------------
+Genauso wie beim Klassenmanager, aber als EIGENES Repository, z. B. „schulplaner“:
+Den INHALT dieses Ordners hochladen (index.html, manifest.webmanifest, sw.js,
+Ordner icons) → Settings → Pages → Branch „main“, „/ (root)“ → Save.
+Adresse dann z. B.: https://DEINNAME.github.io/schulplaner/
+
+Tipp: Die Adresse als QR-Code an die Tafel zeigen, dann müssen die Kinder sie
+nicht abtippen.
+
+
+2. Auf den Schüler-iPads installieren
+-------------------------------------
+Safari öffnen → Adresse aufrufen → Teilen-Knopf → „Zum Home-Bildschirm“.
+WICHTIG: Die App immer über das Symbol auf dem Home-Bildschirm starten.
+(Safari und die installierte App haben getrennte Speicher. Außerdem löscht
+iPadOS Daten von Webseiten, die nur in Safari geöffnet werden, nach einigen
+Wochen ohne Nutzung – bei der installierten App passiert das nicht.)
+
+Werden die iPads zentral verwaltet (MDM, z. B. Jamf oder Relution), kann die
+IT-Betreuung die Adresse als Web-App direkt auf alle iPads verteilen.
+
+
+3. Stundenplan, Hausaufgaben und Proben schicken
+------------------------------------------------
+Im Klassenmanager (Stundenplan oder Klassenliste): „📲 An Schüler“ →
+auswählen, was geschickt werden soll → „⛶ Groß anzeigen“ (für den Beamer).
+Die Kinder tippen im Schulplaner auf „📷 Empfangen“ und halten das iPad auf
+den Code. Bei viel Inhalt wechseln mehrere Codes automatisch – einfach
+draufhalten, bis „Übernehmen“ erscheint.
+
+- Beim ersten Mal fragt das iPad nach der Kamera → „Erlauben“.
+- Erneut senden ist jederzeit möglich: Neue Hausaufgaben kommen dazu, geänderte
+  werden aktualisiert. Häkchen, eigene Einträge und Notizen der Kinder bleiben.
+- Ohne Kamera: Foto vom Code machen und in der Kamera-Ansicht
+  „🖼 Foto wählen“ antippen.
+
+
+4. Was die Kinder selbst machen können
+--------------------------------------
+- Hausaufgaben abhaken, eigene Hausaufgaben und Proben eintragen
+  (das Fälligkeitsdatum wird nach dem Stundenplan vorgeschlagen)
+- zu jedem Eintrag eine eigene Notiz schreiben (✎ antippen)
+- bei geteilten Stunden die eigene Gruppe wählen (Stunde antippen)
+- im Stundenplan wochenweise blättern
+- ⚙ → Sicherung speichern/laden (z. B. bei neuem iPad) oder alle Daten löschen
+
+Proben verschwinden am Probentag um 13 Uhr aus der Liste, erledigte
+Hausaufgaben nach 30 Tagen.
+
+
+5. Aktualisieren
+----------------
+Neue index.html hochladen – die iPads holen sich die neue Version im
+Hintergrund; ab dem übernächsten Start ist sie aktiv. Die Einträge bleiben.
