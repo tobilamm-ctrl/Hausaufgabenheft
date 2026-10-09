@@ -96,6 +96,8 @@
   .tt th.off { color: #9aa0a6; } .tt th .b.fr { background: #e5e7eb; color: #4b5563; }
   .tt td.c.off { background: repeating-linear-gradient(135deg, #f1f1ef 0 6px, #e9e9e6 6px 12px); border-color: #e2e2df; }
   .tt td.c.off .part { filter: grayscale(1); opacity: .45; }
+  .tt td.free { background: repeating-linear-gradient(135deg, #f1f1ef 0 8px, #e8e8e5 8px 16px); border-radius: 10px; text-align: center; vertical-align: middle; padding: 6px; }
+  .tt td.free span { display: inline-block; font-size: 1rem; font-weight: 800; color: #6b7280; background: rgba(255,255,255,.85); border-radius: 8px; padding: 4px 10px; line-height: 1.2; }
   @media (min-width: 1000px) {
     .wrap { max-width: 1360px; }
     .ttlay:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
@@ -254,7 +256,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-10-17</p>
+    <p class="hint">Version 2026-10-18</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -362,11 +364,16 @@ function freeDay(ds) {
 
 // Geteilte Stunden: Gruppe wählen; bei 14-täglichem Wechsel (vom Lehrer markiert) wählt man, welches Fach man in einer bestimmten Woche hat
 const weekParity = (ref, monday) => (((Math.round((new Date(monday + 'T00:00') - new Date(ref + 'T00:00')) / 6048e5)) % 2) + 2) % 2;
+function abParity(refMonday, monday, wd) {   // Ferien und Feiertage zählen beim Wechsel nicht mit
+  let a = addDays(refMonday, wd), b = addDays(monday, wd); if (b < a) [a, b] = [b, a];
+  let n = 0; for (let x = a; x < b; x = addDays(x, 7)) if (!freeDay(x)) n++;
+  return n % 2;
+}
 const mondayOf = ds => addDays(ds, -weekdayIdx(new Date(ds + 'T00:00')));
 const isAB = key => !!(S.tt && S.tt.ab && S.tt.ab[key]) && cellArr(S.tt.cells[key]).length > 1;
 function mineFor(key, monday) {
   const ids = cellArr(S.tt.cells[key]), g = S.grp[key]; if (ids.length < 2 || !g) return null;
-  if (isAB(key)) { if (typeof g !== 'object' || !ids.includes(g.id)) return null; return weekParity(g.wk, monday) ? ids.find(x => x !== g.id) : g.id; }
+  if (isAB(key)) { if (typeof g !== 'object' || !ids.includes(g.id)) return null; return abParity(g.wk, monday, +key.split('|')[0]) ? ids.find(x => x !== g.id) : g.id; }
   return typeof g === 'string' && ids.includes(g) ? g : null;
 }
 function nextLesson(name) {
@@ -419,7 +426,13 @@ function renderTT() {
     const tm = `<td class="tm${cur ? ' now' : ''}"><b>${esc(sl.label)}</b><small>${esc(sl.start)}${sl.end ? '–<br>' + esc(sl.end) : ''}</small></td>`;
     if (sl.pause) return `<tr class="pause">${tm}<td class="pz" colspan="${days.length}">${esc(sl.label)}</td></tr>`;
     return `<tr>${tm}${days.map(d => {
-      const off = !!freeDay(addDays(monday, d));
+      const fr = freeDay(addDays(monday, d));
+      if (fr) {   // Ferien/Feiertag: kein Unterricht
+        if (i > 0 && !tt.slots[i - 1].pause) return '';
+        let n = 0; for (let j = i; j < tt.slots.length && !tt.slots[j].pause; j++) n++;
+        return `<td class="free" rowspan="${n}"><span>${esc(fr)}</span></td>`;
+      }
+      const off = false;
       const key = d + '|' + i, ids = cellArr(tt.cells[key]), ss = ids.map(id => tt.subjects.find(s => s.id === id)).filter(Boolean), td = thisWeek && d === today;
       const ab = ss.length > 1 && isAB(key); if (ab) abSeen = true; else if (ss.length > 1) split = true;
       const mine = mineFor(key, monday);
@@ -430,7 +443,7 @@ function renderTT() {
   $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button>${packD && !days.some(d => addDays(monday, d) === packD) ? (() => { const pk = packStats(packD); return `<button class="pkbtn${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste">🎒 ${new Date(packD + 'T00:00').toLocaleDateString('de-DE', { weekday: 'short' })}${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</button>`; })() : ''}</div>
     <div class="ttscroll"><table class="tt">${head}${body}</table></div>
     ${split ? '<p class="hint">Geteilte Stunde: Tippe darauf, um deine Gruppe zu wählen.</p>' : ''}
-    ${abSeen ? '<p class="hint"><b>⇄ = 14-täglicher Wechsel:</b> Tippe auf die Stunde und wähle, welches Fach du in <b>dieser</b> Woche hast. Ab dann wechselt es automatisch jede Woche.</p>' : ''}`;
+    ${abSeen ? '<p class="hint"><b>⇄ = 14-täglicher Wechsel:</b> Tippe auf die Stunde und wähle, welches Fach du in <b>dieser</b> Woche hast. Ab dann wechselt es automatisch – Ferien und Feiertage zählen dabei nicht mit.</p>' : ''}`;
 }
 $('ttCard').addEventListener('click', e => {
   if (e.target.closest('#wkPrev')) { ui.week--; return renderTT(); }
