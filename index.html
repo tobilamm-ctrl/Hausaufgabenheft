@@ -118,6 +118,9 @@
   .pk-x { font-size: .85rem; margin-top: 6px; padding: 4px 8px; border-radius: 8px; background: #fafaf8; } .pk-x.ev { background: #fdf6d6; } .pk-x.exm { background: var(--red-soft); }
   .it .when.ev { background: #fdf6d6; color: #8a6d00; } .it.ev { --sc: var(--sun); }
   .tt th .b.ev { background: var(--sun); color: var(--ink); }
+  .tt th .b.pk { background: #fff; color: var(--accent); border: 1.5px solid var(--accent); cursor: pointer; font-size: .78rem; padding: 1px 9px; } .tt th .b.pk.done { background: var(--accent); color: #fff; }
+  #packDlg .dlg { width: 440px; }
+  .weeknav .pkbtn { margin-left: 10px; } .weeknav .pkbtn.done { background: var(--accent); color: #fff; }
   .remrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0; } .remrow input[type=time] { width: 130px; flex: 0 0 auto; }
   .sep { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
   .dups { background: var(--sun-soft); border: 1.5px solid var(--sun); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
@@ -180,7 +183,6 @@
     <div class="card" id="ttCard"></div>
     <div class="side">
       <div id="msgs"></div>
-      <div class="card packbox" id="pack" hidden></div>
       <div class="card soonbox"><h2>Demnächst</h2><div id="soon"></div></div>
     </div>
   </section>
@@ -252,9 +254,12 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-10-16</p>
+    <p class="hint">Version 2026-10-17</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
+</div>
+<div class="back" id="packDlg" hidden>
+  <div class="dlg packbox"><div id="pack"></div><div class="btns"><button class="primary" id="packClose">Fertig</button></div></div>
 </div>
 <div class="back" id="matDlg" hidden>
   <div class="dlg">
@@ -389,7 +394,8 @@ function render() {
   renderMsgs(); updateBadge(openHw);
   $('hwBadge').hidden = !openHw; $('hwBadge').textContent = openHw;
   $('exBadge').hidden = !exN; $('exBadge').textContent = exN;
-  if (ui.tab === 'tt') { renderTT(); renderPack(); renderSoon(); }
+  if (ui.tab === 'tt') { renderTT(); renderSoon(); }
+  if (!$('packDlg').hidden) renderPack();
   if (ui.tab === 'hw') renderHW();
   if (ui.tab === 'ex') renderEX();
 }
@@ -402,10 +408,11 @@ function renderTT() {
   const monday = addDays(todayStr(), -today + 7 * ui.week);
   const th = new Date(addDays(monday, 3) + 'T00:00'), y1 = new Date(th.getFullYear(), 0, 4);
   const kw = 1 + Math.round(((th - y1) / 864e5 - 3 + (y1.getDay() + 6) % 7) / 7);
+  const packD = packDay();
   const head = `<tr><th></th>${days.map(d => { const ds = addDays(monday, d);
     const ex = S.ex.filter(x => !x.hidden && ds >= x.date && ds <= exEndD(x)), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
-    const fr = freeDay(ds);
-    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => x.kind === 'ev' ? `<span class="b ev">📅 ${esc(x.title)}</span>` : `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
+    const fr = freeDay(ds), pk = ds === packD ? packStats(ds) : null;
+    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${pk ? `<span class="b pk${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste für diesen Tag – antippen">🎒${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</span>` : ''}${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => x.kind === 'ev' ? `<span class="b ev">📅 ${esc(x.title)}</span>` : `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
   let split = false, abSeen = false;
   const body = tt.slots.map((sl, i) => {
     const cur = thisWeek && sl.start && sl.end && hm >= sl.start && hm < sl.end;
@@ -420,7 +427,7 @@ function renderTT() {
       return `<td class="c${ss.length ? ' full' : ''}${ab ? ' ab' : ''}${off ? ' off' : ''}${td ? ' today' : ''}${td && cur && !off ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}${ab ? '<span class="abm">⇄</span>' : ''}</td>`;
     }).join('')}</tr>`;
   }).join('');
-  $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button></div>
+  $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button>${packD && !days.some(d => addDays(monday, d) === packD) ? (() => { const pk = packStats(packD); return `<button class="pkbtn${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste">🎒 ${new Date(packD + 'T00:00').toLocaleDateString('de-DE', { weekday: 'short' })}${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</button>`; })() : ''}</div>
     <div class="ttscroll"><table class="tt">${head}${body}</table></div>
     ${split ? '<p class="hint">Geteilte Stunde: Tippe darauf, um deine Gruppe zu wählen.</p>' : ''}
     ${abSeen ? '<p class="hint"><b>⇄ = 14-täglicher Wechsel:</b> Tippe auf die Stunde und wähle, welches Fach du in <b>dieser</b> Woche hast. Ab dann wechselt es automatisch jede Woche.</p>' : ''}`;
@@ -429,6 +436,7 @@ $('ttCard').addEventListener('click', e => {
   if (e.target.closest('#wkPrev')) { ui.week--; return renderTT(); }
   if (e.target.closest('#wkNext')) { ui.week++; return renderTT(); }
   if (e.target.closest('#wkLbl')) { ui.week = 0; return renderTT(); }
+  if (e.target.closest('[data-pack]')) { renderPack(); $('packDlg').hidden = false; return; }
   const td = e.target.closest('td.c'); if (!td) return;
   const ids = cellArr(S.tt.cells[td.dataset.key]); if (ids.length < 2) return;
   const key = td.dataset.key, monday = addDays(todayStr(), -weekdayIdx(new Date()) + 7 * ui.week);
@@ -547,7 +555,7 @@ $('edDel').addEventListener('click', () => {
   save(); closeEdit(); render();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (!$('scan').hidden) stopScan(); closeEdit(); $('impDlg').hidden = true; $('setDlg').hidden = true; $('matDlg').hidden = true; }
+  if (e.key === 'Escape') { if (!$('scan').hidden) stopScan(); closeEdit(); $('impDlg').hidden = true; $('setDlg').hidden = true; $('matDlg').hidden = true; $('packDlg').hidden = true; }
   if (e.key === 'Enter' && !$('edDlg').hidden && e.target.tagName !== 'TEXTAREA' && !e.target.closest('button')) { e.preventDefault(); $('edSave').click(); }
 });
 
@@ -720,8 +728,13 @@ function subjectsOn(d) {
 }
 const teacherMat = name => { const su = subjByName(name); return su && su.mat || ''; };
 const matItems = name => ((S.mat && S.mat[name]) || teacherMat(name)).split(',').map(x => x.trim()).filter(Boolean);   // eigenes Material, sonst das vom Lehrer
+function packStats(d) {
+  const done = new Set((S.packed || {})[d] || []); let total = 0, n = 0;
+  subjectsOn(d).forEach(su => matItems(su.name).forEach(it => { total++; if (done.has(su.name + '|' + it)) n++; }));
+  return { total, n };
+}
 function renderPack() {
-  const d = packDay(); $('pack').hidden = !d; if (!d) return;
+  const d = packDay(); if (!d) { $('pack').innerHTML = '<p class="hint">Kein Schultag gefunden.</p>'; return; }
   const t = todayStr(), lbl = d === t ? 'Für heute' : d === addDays(t, 1) ? 'Für morgen' : 'Für ' + fmtDW(d);
   S.packed = S.packed || {}; Object.keys(S.packed).forEach(k => { if (k < t) delete S.packed[k]; });
   const done = new Set(S.packed[d] || []), subs = subjectsOn(d);
@@ -729,7 +742,7 @@ function renderPack() {
   let any = false;
   const body = subs.map(su => { const items = matItems(su.name); if (items.length) any = true;
     return `<div class="pk-s" style="--sc:${su.color}"><i></i>${esc(su.name)}</div>${items.map(it => { const key = su.name + '|' + it; return `<button class="pk-c${done.has(key) ? ' on' : ''}" data-pk="${esc(key)}">${done.has(key) ? '✓ ' : ''}${esc(it)}</button>`; }).join('') || ''}`; }).join('');
-  $('pack').innerHTML = `<h2>🎒 ${lbl}<button id="matEdit" title="Material pro Fach festlegen">✎</button></h2><div class="hint" style="margin:-6px 0 4px">${fmtDW(d)}</div>
+  $('pack').innerHTML = `<h2>🎒 ${lbl}<button id="matEdit" title="Material pro Fach festlegen">✎</button></h2>${d === t || d === addDays(t, 1) ? `<div class="hint" style="margin:-6px 0 4px">${fmtDW(d)}</div>` : ''}
     ${evs.map(x => `<div class="pk-x ${x.kind === 'ev' ? 'ev' : 'exm'}">${x.kind === 'ev' ? '📅 ' + esc((x.time ? x.time + ' ' : '') + x.title) : '📝 Probe ' + esc(x.subject || '') + ' – ' + esc(x.title)}</div>`).join('')}
     ${hws.map(h => `<div class="pk-x">📚 Noch offen: ${esc(h.subject || '')} – ${esc(h.title)}</div>`).join('')}
     ${body || '<p class="hint">Kein Unterricht eingetragen.</p>'}`;
@@ -739,15 +752,17 @@ $('pack').addEventListener('click', e => {
   const b = e.target.closest('[data-pk]'); if (!b) return;
   const d = packDay(), arr = S.packed[d] = S.packed[d] || [], i = arr.indexOf(b.dataset.pk);
   if (i >= 0) arr.splice(i, 1); else arr.push(b.dataset.pk);
-  save(); renderPack();
+  save(); renderPack(); renderTT();
 });
+$('packClose').addEventListener('click', () => { $('packDlg').hidden = true; });
+$('packDlg').addEventListener('click', e => { if (e.target === $('packDlg')) $('packDlg').hidden = true; });
 function openMat() {
   const names = subjectList();
   $('matList').innerHTML = names.map((n, i) => { const tm = teacherMat(n); return `<label class="f">${esc(n)}${tm ? ` <span class="tch">vom Lehrer: ${esc(tm)}</span>` : ''}<input data-mat="${esc(n)}" value="${esc((S.mat || {})[n] || '')}" placeholder="${tm ? 'leer lassen = wie vom Lehrer' : 'z. B. Buch, Heft, Arbeitsheft'}"></label>`; }).join('') || '<p class="hint">Noch keine Fächer – empfange zuerst den Stundenplan.</p>';
   $('matDlg').hidden = false;
 }
 $('matCancel').addEventListener('click', () => { $('matDlg').hidden = true; });
-$('matSave').addEventListener('click', () => { S.mat = S.mat || {}; document.querySelectorAll('#matList [data-mat]').forEach(inp => { const v = inp.value.trim(); if (v) S.mat[inp.dataset.mat] = v; else delete S.mat[inp.dataset.mat]; }); save(); $('matDlg').hidden = true; render(); });
+$('matSave').addEventListener('click', () => { if (!$('packDlg').hidden) setTimeout(renderPack, 0); S.mat = S.mat || {}; document.querySelectorAll('#matList [data-mat]').forEach(inp => { const v = inp.value.trim(); if (v) S.mat[inp.dataset.mat] = v; else delete S.mat[inp.dataset.mat]; }); save(); $('matDlg').hidden = true; render(); });
 
 /* ---------- Erinnerungen: Zahl am App-Symbol, Kalender ---------- */
 function updateBadge(n) {
