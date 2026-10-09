@@ -33,12 +33,12 @@
   label.f { min-width: 0; }
   .form { display: grid; gap: 10px; align-items: end; }
   .form.hw { grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.2fr) auto; }
-  .form.ex { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 2.4fr) auto; }
+  .form.ex { grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 2.2fr) auto; }
   .dlg .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .dlg .row.one { grid-template-columns: minmax(0, 1fr); }
   @media (max-width: 900px) {
     .form.hw, .form.ex { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .form.hw label:nth-child(2), .form.ex label:nth-child(3) { grid-column: 1 / -1; }
+    .form.hw label:nth-child(2), .form.ex label:nth-child(4) { grid-column: 1 / -1; }
     .form .add { grid-column: 1 / -1; }
   }
   label.f { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); font-weight: 600; }
@@ -98,11 +98,24 @@
   @media (min-width: 1000px) {
     .wrap { max-width: 1360px; }
     .ttlay:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
-    .ttlay .soonbox { position: sticky; top: 8px; max-height: calc(100vh - 30px); overflow: auto; }
+    .ttlay .side { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
     .ttlay .soonbox .it { padding: 8px 10px; gap: 8px; } .ttlay .soonbox .it .ck { width: 32px; height: 32px; }
     .ttlay table.tt { min-width: 560px; }
   }
   .tt td.tm { width: 54px; } .tt td.tm small { display: block; font-size: .68rem; line-height: 1.15; }
+  .side > .card { margin-bottom: 14px; } .side .it .when { display: none; }
+  #msgs .msg { display: flex; gap: 12px; align-items: center; background: #fffbeb; border: 1.5px solid var(--sun); border-radius: 14px; padding: 10px 14px; margin-top: 10px; }
+  #msgs .msg .mtx { flex: 1; white-space: pre-wrap; font-weight: 600; } #msgs .msg .mtx small { display: block; font-weight: 400; color: var(--muted); font-size: .78rem; }
+  #msgs .msg button { flex: 0 0 auto; }
+  .packbox h2 { display: flex; align-items: center; gap: 8px; } .packbox h2 button { margin-left: auto; min-height: 34px; padding: 2px 10px; font-size: .85rem; }
+  .pk-s { margin: 8px 0 2px; font-weight: 800; font-size: .9rem; display: flex; align-items: center; gap: 6px; } .pk-s i { width: 10px; height: 10px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .pk-c { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 3px 10px; margin: 3px 4px 0 0; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-weight: 600; font-size: .85rem; color: var(--ink); }
+  .pk-c.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); text-decoration: line-through; }
+  .pk-x { font-size: .85rem; margin-top: 6px; padding: 4px 8px; border-radius: 8px; background: #fafaf8; } .pk-x.ev { background: #fdf6d6; } .pk-x.exm { background: var(--red-soft); }
+  .it .when.ev { background: #fdf6d6; color: #8a6d00; } .it.ev { --sc: var(--sun); }
+  .tt th .b.ev { background: var(--sun); color: var(--ink); }
+  .remrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0; } .remrow input[type=time] { width: 130px; flex: 0 0 auto; }
+  .sep { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
   /* Listen */
   .grp > b { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
   .grp.over > b { color: var(--red); } .grp.today > b { color: var(--accent); }
@@ -148,15 +161,19 @@
     <button class="primary" id="scanBtn">📷 Empfangen</button>
     <button id="setBtn" title="Einstellungen">⚙</button>
   </header>
+  <div id="msgs"></div>
   <nav class="tabs" id="tabs">
     <button data-t="tt">🗓 Stundenplan</button>
     <button data-t="hw">📚 Hausaufgaben<span class="badge" id="hwBadge" hidden></span></button>
-    <button data-t="ex">📝 Proben<span class="badge" id="exBadge" hidden></span></button>
+    <button data-t="ex">📝 Proben &amp; Termine<span class="badge" id="exBadge" hidden></span></button>
   </nav>
 
   <section id="pTT" class="ttlay">
     <div class="card" id="ttCard"></div>
-    <div class="card soonbox"><h2>Demnächst</h2><div id="soon"></div></div>
+    <div class="side">
+      <div class="card packbox" id="pack" hidden></div>
+      <div class="card soonbox"><h2>Demnächst</h2><div id="soon"></div></div>
+    </div>
   </section>
 
   <section id="pHW" hidden>
@@ -174,8 +191,9 @@
 
   <section id="pEX" hidden>
     <div class="card">
-      <h2>Neue Probe</h2>
+      <h2>Neue Probe oder neuer Termin</h2>
       <div class="form ex">
+        <label class="f">Art<select id="exKind"><option value="ex">📝 Probe</option><option value="ev">📅 Termin</option></select></label>
         <label class="f">Datum<input type="date" id="exDate"></label>
         <label class="f">Fach<select id="exSubj" class="subjsel"></select></label>
         <label class="f">Thema<input id="exText" placeholder="z. B. Bruchrechnen, Diktat" enterkeyhint="done"></label>
@@ -218,8 +236,23 @@
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
     <p class="hint">Die Sicherung ist eine Datei, z. B. zum Umziehen auf ein neues iPad.</p>
     <div class="row one"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
-    <p class="hint">Version 2026-10-10</p>
+    <hr class="sep">
+    <h2>🔔 Erinnerungen</h2>
+    <label class="remrow"><input type="checkbox" id="remBadge" style="width:auto;min-height:0"> Zahl der offenen Hausaufgaben am App-Symbol anzeigen</label>
+    <p class="hint" style="margin-top:0">Nur in der installierten App. Beim ersten Mal fragt das iPad, ob Mitteilungen erlaubt sind – „Erlauben“ wählen.</p>
+    <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
+    <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
+    <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
+    <p class="hint">Version 2026-10-13</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
+  </div>
+</div>
+<div class="back" id="matDlg" hidden>
+  <div class="dlg">
+    <h2>🎒 Material pro Fach</h2>
+    <p class="hint" style="margin-top:0">Mehrere Sachen mit Komma trennen. Daraus entsteht die Packliste für den nächsten Schultag. Hat der Lehrer schon Material geschickt, gilt das – außer du trägst selbst etwas ein.</p>
+    <div id="matList" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="btns"><button id="matCancel">Abbrechen</button><button class="primary" id="matSave">Speichern</button></div>
   </div>
 </div>
 <input type="file" id="bkFile" accept=".json,application/json" hidden>
@@ -251,12 +284,14 @@ const fmtDW = s => s ? new Date(s + 'T00:00').toLocaleDateString('de-DE', { week
 const weekdayIdx = d => (d.getDay() + 6) % 7;
 const daysUntil = s => Math.round((new Date(s + 'T00:00') - new Date(todayStr() + 'T00:00')) / 864e5);
 const stillCurrent = date => !!date && Date.now() < new Date(date + 'T13:00').getTime();   // am Termin bis 13 Uhr sichtbar
+const exEndD = x => x.kind === 'ev' && x.end && x.end > x.date ? x.end : x.date;
+const exCur = x => x.kind === 'ev' ? Date.now() < new Date(exEndD(x) + 'T23:59').getTime() : stillCurrent(x.date);
 const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 const COLORS = ['#0ea5e9', '#f97316', '#22c55e', '#a855f7', '#ef4444', '#eab308', '#14b8a6', '#ec4899', '#6366f1', '#84cc16', '#92400e', '#64748b'];
 
 /* ---------- Daten (nur auf diesem Gerät) ---------- */
 const KEY = 'schulplaner-v1';
-let S = { tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [] };
+let S = { tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [], msg: [], mat: {}, packed: {}, badge: false, remind: '15:00' };
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Speichern nicht möglich – ist der Speicher voll?'); } }
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
@@ -341,10 +376,11 @@ $('tabs').addEventListener('click', e => { const b = e.target.closest('button');
 
 function render() {
   $('clsLbl').textContent = S.cls ? 'Klasse ' + S.cls : '';
-  const openHw = S.hw.filter(h => !h.done && !h.hidden).length, exN = S.ex.filter(x => !x.hidden && stillCurrent(x.date)).length;
+  const openHw = S.hw.filter(h => !h.done && !h.hidden).length, exN = S.ex.filter(x => !x.hidden && exCur(x)).length;
+  renderMsgs(); updateBadge(openHw);
   $('hwBadge').hidden = !openHw; $('hwBadge').textContent = openHw;
   $('exBadge').hidden = !exN; $('exBadge').textContent = exN;
-  if (ui.tab === 'tt') { renderTT(); renderSoon(); }
+  if (ui.tab === 'tt') { renderTT(); renderPack(); renderSoon(); }
   if (ui.tab === 'hw') renderHW();
   if (ui.tab === 'ex') renderEX();
 }
@@ -358,9 +394,9 @@ function renderTT() {
   const th = new Date(addDays(monday, 3) + 'T00:00'), y1 = new Date(th.getFullYear(), 0, 4);
   const kw = 1 + Math.round(((th - y1) / 864e5 - 3 + (y1.getDay() + 6) % 7) / 7);
   const head = `<tr><th></th>${days.map(d => { const ds = addDays(monday, d);
-    const ex = S.ex.filter(x => !x.hidden && x.date === ds), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
+    const ex = S.ex.filter(x => !x.hidden && ds >= x.date && ds <= exEndD(x)), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
     const fr = freeDay(ds);
-    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
+    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => x.kind === 'ev' ? `<span class="b ev">📅 ${esc(x.title)}</span>` : `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
   let split = false, abSeen = false;
   const body = tt.slots.map((sl, i) => {
     const cur = thisWeek && sl.start && sl.end && hm >= sl.start && hm < sl.end;
@@ -401,9 +437,10 @@ $('ttCard').addEventListener('click', e => {
 function itemHtml(h, kind) {
   const sc = subjColor(h.subject);
   let when = '';
-  if (kind === 'ex') { const n = daysUntil(h.date); when = `<span class="when${n <= 2 ? ' soon' : ''}">${n <= 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'}</span>`; }
-  const meta = kind === 'ex' ? fmtDW(h.date) : (h.due ? 'bis ' + fmtDW(h.due) : 'ohne Datum');
-  return `<div class="it${h.done ? ' done' : ''}" style="--sc:${sc}" data-id="${h.id}" data-k="${kind}">
+  const ev = kind === 'ex' && h.kind === 'ev';
+  if (kind === 'ex') { const n = daysUntil(h.date); when = `<span class="when${ev ? ' ev' : n <= 2 ? ' soon' : ''}">${n < 0 ? 'läuft' : n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'}</span>`; }
+  const meta = kind === 'ex' ? (ev ? '📅 Termin · ' : '📝 Probe · ') + fmtDW(h.date) + (ev && h.end && h.end > h.date ? ' – ' + fmtDW(h.end) : '') + (ev && h.time ? ' · ' + esc(h.time) : '') : (h.due ? 'bis ' + fmtDW(h.due) : 'ohne Datum');
+  return `<div class="it${h.done ? ' done' : ''}${ev ? ' ev' : ''}" style="${ev ? '' : '--sc:' + sc}" data-id="${h.id}" data-k="${kind}">
     ${kind === 'hw' ? `<button class="ck" aria-label="erledigt">${h.done ? '✓' : ''}</button>` : ''}
     <div class="tx">${h.subject ? `<span class="sj">${esc(h.subject)}</span>` : ''}<b>${esc(h.title)}</b>${h.src === 't' ? '<span class="tch">vom Lehrer</span>' : ''}
       ${h.tnote ? `<span class="mt">ℹ️ ${esc(h.tnote)}</span>` : ''}${h.note ? `<span class="nt">📝 ${esc(h.note)}</span>` : ''}<span class="mt">${meta}</span></div>
@@ -430,14 +467,14 @@ function renderHW() {
 function renderEX() {
   if (document.activeElement !== $('exSubj')) fillSubj($('exSubj'), $('exSubj').value);
   if (!$('exDate').value) $('exDate').value = addDays(todayStr(), 7);
-  const list = S.ex.filter(x => !x.hidden && stillCurrent(x.date)).sort((a, b) => a.date.localeCompare(b.date));
-  $('exList').innerHTML = list.length ? list.map(x => itemHtml(x, 'ex')).join('') : '<div class="card empty"><b>Keine Proben eingetragen</b>Neue Proben trägst du oben ein oder empfängst sie vom Lehrer.</div>';
+  const list = S.ex.filter(x => !x.hidden && exCur(x)).sort((a, b) => a.date.localeCompare(b.date));
+  $('exList').innerHTML = list.length ? list.map(x => itemHtml(x, 'ex')).join('') : '<div class="card empty"><b>Keine Proben oder Termine</b>Neue trägst du oben ein oder empfängst sie vom Lehrer.</div>';
 }
 function renderSoon() {
   const t = todayStr(), end = addDays(t, 7);
   const hw = S.hw.filter(h => !h.hidden && h.due && ((h.due <= end && stillCurrent(h.due)) || (!h.done && !stillCurrent(h.due))))   // überfällige bleiben, bis sie abgehakt sind
     .map(h => ({ d: stillCurrent(h.due) ? h.due : '0000', k: 'hw', h }));
-  const ex = S.ex.filter(x => !x.hidden && x.date <= end && stillCurrent(x.date)).map(x => ({ d: x.date, k: 'ex', h: x }));
+  const ex = S.ex.filter(x => !x.hidden && x.date <= end && exCur(x)).map(x => ({ d: x.date < t ? t : x.date, k: 'ex', h: x }));
   const all = [...ex, ...hw].sort((a, b) => a.d.localeCompare(b.d));
   if (!all.length) { $('soon').innerHTML = '<p class="hint">In den nächsten 7 Tagen steht nichts an.</p>'; return; }
   const g = new Map(); all.forEach(x => { if (!g.has(x.d)) g.set(x.d, []); g.get(x.d).push(x); });
@@ -462,11 +499,13 @@ $('hwAdd').addEventListener('click', () => {
 $('hwText').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('hwAdd').click(); } });
 $('exAdd').addEventListener('click', () => {
   const date = $('exDate').value; if (!date) { $('exDate').focus(); return; }
-  const subject = $('exSubj').value.replace('__new', ''), title = $('exText').value.trim() || 'Probe';
-  S.ex.push({ id: nid('e'), src: 's', date, subject, title, note: '' });
-  save(); $('exText').value = ''; render(); toast('Probe eingetragen');
+  const ev = $('exKind').value === 'ev', subject = $('exSubj').value.replace('__new', ''), title = $('exText').value.trim() || (ev ? '' : 'Probe');
+  if (!title) { $('exText').focus(); return; }
+  S.ex.push(Object.assign({ id: nid('e'), src: 's', date, subject, title, note: '' }, ev ? { kind: 'ev' } : {}));
+  save(); $('exText').value = ''; render(); toast(ev ? 'Termin eingetragen' : 'Probe eingetragen');
 });
 $('exText').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('exAdd').click(); } });
+$('exKind').addEventListener('change', () => { const ev = $('exKind').value === 'ev'; $('exText').placeholder = ev ? 'z. B. Wandertag, Schwimmen, Ausflug' : 'z. B. Bruchrechnen, Diktat'; });
 
 /* ---------- Bearbeiten ---------- */
 let ed = null;
@@ -499,7 +538,7 @@ $('edDel').addEventListener('click', () => {
   save(); closeEdit(); render();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (!$('scan').hidden) stopScan(); closeEdit(); $('impDlg').hidden = true; $('setDlg').hidden = true; }
+  if (e.key === 'Escape') { if (!$('scan').hidden) stopScan(); closeEdit(); $('impDlg').hidden = true; $('setDlg').hidden = true; $('matDlg').hidden = true; }
   if (e.key === 'Enter' && !$('edDlg').hidden && e.target.tagName !== 'TEXTAREA' && !e.target.closest('button')) { e.preventDefault(); $('edSave').click(); }
 });
 
@@ -580,7 +619,8 @@ function showImport(P) {
   const li = [];
   if (P.tt) li.push(`<li><b>Stundenplan</b>${S.tt ? ' – dein bisheriger Stundenplan wird ersetzt' : ''}</li>`);
   if (P.hw) li.push(`<li><b>${P.hw.length}</b> ${P.hw.length === 1 ? 'Hausaufgabe' : 'Hausaufgaben'}</li>`);
-  if (P.ex) li.push(`<li><b>${P.ex.length}</b> ${P.ex.length === 1 ? 'Probe' : 'Proben'}</li>`);
+  if (P.ex) li.push(`<li><b>${P.ex.length}</b> ${P.ex.length === 1 ? 'Probe/Termin' : 'Proben/Termine'}</li>`);
+  if (P.m && P.m.length) li.push(`<li><b>${P.m.length}</b> ${P.m.length === 1 ? 'Mitteilung' : 'Mitteilungen'}</li>`);
   $('impInfo').innerHTML = `<p>Klasse <b>${esc(P.cls || '–')}</b>, Stand ${fmtD(P.d)}:</p><ul>${li.join('') || '<li>keine Einträge</li>'}</ul><p class="hint">Deine eigenen Einträge, Häkchen und Notizen bleiben erhalten.</p>`;
   $('impDlg').hidden = false;
 }
@@ -589,7 +629,7 @@ $('impOk').addEventListener('click', () => {
   const P = pending; if (!P) return;
   if (P.cls) S.cls = P.cls;
   if (P.tt) {
-    const old = S.tt, tt = { sat: !!P.tt.sat, slots: P.tt.sl.map(([label, start, end, pz]) => ({ label, start, end, pause: !!pz })), subjects: P.tt.su.map(([id, name, color]) => ({ id, name, color })), cells: P.tt.c || {} };
+    const old = S.tt, tt = { sat: !!P.tt.sat, slots: P.tt.sl.map(([label, start, end, pz]) => ({ label, start, end, pause: !!pz })), subjects: P.tt.su.map(([id, name, color, mat]) => ({ id, name, color, mat: mat || '' })), cells: P.tt.c || {} };
     tt.ab = P.tt.ab || {};
     Object.keys(S.grp).forEach(k => {   // Wahl behalten, wenn die Stunde gleich bleibt
       const g = S.grp[k], ids = cellArr(tt.cells[k]), ab = !!tt.ab[k] && ids.length > 1;
@@ -602,17 +642,114 @@ $('impOk').addEventListener('click', () => {
     const gid = 't:' + id, h = S.hw.find(x => x.id === gid);
     if (h) Object.assign(h, { subject, title, given, due, tnote }); else { S.hw.push({ id: gid, src: 't', subject, title, given, due, tnote, done: false, note: '' }); nHw++; }
   });
-  (P.ex || []).forEach(([id, date, subject, title, tnote]) => {
-    const gid = 't:' + id, x = S.ex.find(e => e.id === gid);
-    if (x) Object.assign(x, { date, subject, title, tnote }); else { S.ex.push({ id: gid, src: 't', date, subject, title, tnote, note: '' }); nEx++; }
+  (P.ex || []).forEach(([id, date, subject, title, tnote, kind, end, time]) => {
+    const gid = 't:' + id, x = S.ex.find(e => e.id === gid), add = kind === 'ev' ? { kind: 'ev', end: end || '', time: time || '' } : { kind: '', end: '', time: '' };
+    if (x) Object.assign(x, { date, subject, title, tnote }, add); else { S.ex.push(Object.assign({ id: gid, src: 't', date, subject, title, tnote, note: '' }, add)); nEx++; }
   });
+  S.msg = S.msg || [];
+  (P.m || []).forEach(([id, text, until]) => { const gid = 't:' + id, m = S.msg.find(x => x.id === gid); if (m) { if (m.text !== text) m.read = false; Object.assign(m, { text, until }); } else S.msg.push({ id: gid, text, until, read: false }); });
   save(); $('impDlg').hidden = true; pending = null;
-  toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw ? ` · ${nHw} neue HA` : '') + (nEx ? ` · ${nEx} neue Proben` : ''));
+  toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw ? ` · ${nHw} neue HA` : '') + (nEx ? ` · ${nEx} neue Proben/Termine` : ''));
   render();
 });
 
+/* ---------- Mitteilungen vom Lehrer ---------- */
+function renderMsgs() {
+  const t = todayStr(), list = (S.msg || []).filter(m => !m.read && (!m.until || m.until >= t));
+  $('msgs').innerHTML = list.map(m => `<div class="msg"><span style="font-size:1.4rem">📣</span><div class="mtx">${esc(m.text)}<small>Mitteilung vom Lehrer${m.until ? ' · bis ' + fmtDW(m.until) : ''}</small></div><button data-read="${m.id}">✓ Gelesen</button></div>`).join('');
+}
+$('msgs').addEventListener('click', e => { const b = e.target.closest('[data-read]'); if (!b) return; const m = S.msg.find(x => x.id === b.dataset.read); if (m) { m.read = true; save(); render(); } });
+
+/* ---------- Packliste für den nächsten Schultag ---------- */
+function packDay() {
+  if (!S.tt) return null;
+  let d = new Date().getHours() < 12 ? todayStr() : addDays(todayStr(), 1);
+  for (let n = 0; n < 40; n++, d = addDays(d, 1)) { const wd = weekdayIdx(new Date(d + 'T00:00')); if (wd <= (S.tt.sat ? 5 : 4) && !freeDay(d)) return d; }
+  return null;
+}
+function subjectsOn(d) {
+  const wd = weekdayIdx(new Date(d + 'T00:00')), mon = mondayOf(d), out = [];
+  S.tt.slots.forEach((sl, i) => { if (sl.pause) return; const k = wd + '|' + i, m = mineFor(k, mon);
+    (m ? [m] : cellArr(S.tt.cells[k])).forEach(id => { const su = S.tt.subjects.find(x => x.id === id); if (su && !out.some(o => o.id === su.id)) out.push(su); }); });
+  return out;
+}
+const teacherMat = name => { const su = subjByName(name); return su && su.mat || ''; };
+const matItems = name => ((S.mat && S.mat[name]) || teacherMat(name)).split(',').map(x => x.trim()).filter(Boolean);   // eigenes Material, sonst das vom Lehrer
+function renderPack() {
+  const d = packDay(); $('pack').hidden = !d; if (!d) return;
+  const t = todayStr(), lbl = d === t ? 'Für heute' : d === addDays(t, 1) ? 'Für morgen' : 'Für ' + fmtDW(d);
+  S.packed = S.packed || {}; Object.keys(S.packed).forEach(k => { if (k < t) delete S.packed[k]; });
+  const done = new Set(S.packed[d] || []), subs = subjectsOn(d);
+  const evs = S.ex.filter(x => !x.hidden && d >= x.date && d <= exEndD(x)), hws = S.hw.filter(h => !h.hidden && !h.done && h.due === d);
+  let any = false;
+  const body = subs.map(su => { const items = matItems(su.name); if (items.length) any = true;
+    return `<div class="pk-s" style="--sc:${su.color}"><i></i>${esc(su.name)}</div>${items.map(it => { const key = su.name + '|' + it; return `<button class="pk-c${done.has(key) ? ' on' : ''}" data-pk="${esc(key)}">${done.has(key) ? '✓ ' : ''}${esc(it)}</button>`; }).join('') || '<span class="hint">kein Material eingetragen</span>'}`; }).join('');
+  $('pack').innerHTML = `<h2>🎒 ${lbl}<button id="matEdit" title="Material pro Fach festlegen">✎</button></h2><div class="hint" style="margin:-6px 0 4px">${fmtDW(d)}</div>
+    ${evs.map(x => `<div class="pk-x ${x.kind === 'ev' ? 'ev' : 'exm'}">${x.kind === 'ev' ? '📅 ' + esc((x.time ? x.time + ' ' : '') + x.title) : '📝 Probe ' + esc(x.subject || '') + ' – ' + esc(x.title)}</div>`).join('')}
+    ${hws.map(h => `<div class="pk-x">📚 Noch offen: ${esc(h.subject || '')} – ${esc(h.title)}</div>`).join('')}
+    ${body || '<p class="hint">Kein Unterricht eingetragen.</p>'}${subs.length && !any ? '<p class="hint">Tippe auf „✎ Material“ und trage ein, was du in jedem Fach brauchst (z. B. Buch, Heft, Atlas).</p>' : ''}`;
+}
+$('pack').addEventListener('click', e => {
+  if (e.target.closest('#matEdit')) { openMat(); return; }
+  const b = e.target.closest('[data-pk]'); if (!b) return;
+  const d = packDay(), arr = S.packed[d] = S.packed[d] || [], i = arr.indexOf(b.dataset.pk);
+  if (i >= 0) arr.splice(i, 1); else arr.push(b.dataset.pk);
+  save(); renderPack();
+});
+function openMat() {
+  const names = subjectList();
+  $('matList').innerHTML = names.map((n, i) => { const tm = teacherMat(n); return `<label class="f">${esc(n)}${tm ? ` <span class="tch">vom Lehrer: ${esc(tm)}</span>` : ''}<input data-mat="${esc(n)}" value="${esc((S.mat || {})[n] || '')}" placeholder="${tm ? 'leer lassen = wie vom Lehrer' : 'z. B. Buch, Heft, Arbeitsheft'}"></label>`; }).join('') || '<p class="hint">Noch keine Fächer – empfange zuerst den Stundenplan.</p>';
+  $('matDlg').hidden = false;
+}
+$('matCancel').addEventListener('click', () => { $('matDlg').hidden = true; });
+$('matSave').addEventListener('click', () => { S.mat = S.mat || {}; document.querySelectorAll('#matList [data-mat]').forEach(inp => { const v = inp.value.trim(); if (v) S.mat[inp.dataset.mat] = v; else delete S.mat[inp.dataset.mat]; }); save(); $('matDlg').hidden = true; render(); });
+
+/* ---------- Erinnerungen: Zahl am App-Symbol, Kalender ---------- */
+function updateBadge(n) {
+  if (!('setAppBadge' in navigator)) return;
+  try { if (S.badge && n) navigator.setAppBadge(n).catch(() => {}); else navigator.clearAppBadge().catch(() => {}); } catch (e) {}
+}
+const icsDate = ds => ds.replace(/-/g, ''), icsEsc = t => String(t || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+const icsFold = l => { const out = []; let x = [...l]; while (x.length > 60) { out.push(x.slice(0, 60).join('')); x = x.slice(60); } out.push(x.join('')); return out.join('\r\n '); };
+function icsWrap(events) { return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPW Theres//Hausaufgabenheft//DE', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].map(icsFold).join('\r\n') + '\r\n'; }
+function deliverIcs(text, name) {
+  const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' }), url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (!w) { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function icsDaily() {
+  const time = (S.remind || '15:00').replace(':', '') + '00', until = '2027-07-31', ex = [];
+  let start = addDays(todayStr(), 1); while (weekdayIdx(new Date(start + 'T00:00')) > 4 || freeDay(start)) start = addDays(start, 1);
+  for (let d = start; d <= until; d = addDays(d, 1)) { const wd = weekdayIdx(new Date(d + 'T00:00')); if (wd <= 4 && freeDay(d)) ex.push(icsDate(d) + 'T' + time); }
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  return icsWrap(['BEGIN:VEVENT', 'UID:hausaufgaben-check@jpw-theres', 'DTSTAMP:' + stamp, 'SUMMARY:📚 Hausaufgaben-Check', 'DESCRIPTION:Schau ins Hausaufgabenheft: Was ist noch offen?',
+    'DTSTART:' + icsDate(start) + 'T' + time, 'DURATION:PT15M', 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=' + icsDate(until) + 'T235959', ...(ex.length ? ['EXDATE:' + ex.join(',')] : []),
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Hausaufgaben-Check', 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT']);
+}
+function icsExams() {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', ev = [];
+  S.ex.filter(x => !x.hidden && exCur(x)).forEach(x => {
+    const isEv = x.kind === 'ev', sum = isEv ? '📅 ' + x.title : '📝 Probe ' + (x.subject ? x.subject + ': ' : '') + x.title;
+    ev.push('BEGIN:VEVENT', 'UID:' + x.id.replace(/[^a-z0-9]/gi, '') + '@jpw-theres', 'DTSTAMP:' + stamp, 'SUMMARY:' + icsEsc(sum), 'DESCRIPTION:' + icsEsc([x.time, x.tnote, x.note].filter(Boolean).join(' – ')),
+      'DTSTART;VALUE=DATE:' + icsDate(x.date), 'DTEND;VALUE=DATE:' + icsDate(addDays(exEndD(x), 1)),
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(sum), 'TRIGGER:-PT8H', 'END:VALARM',
+      ...(isEv ? [] : ['BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(sum + ' – in 2 Tagen'), 'TRIGGER:-PT56H', 'END:VALARM']), 'END:VEVENT');
+  });
+  return ev.length ? icsWrap(ev) : null;
+}
+$('remBadge').addEventListener('change', async e => {
+  S.badge = e.target.checked;
+  if (S.badge && 'Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (err) {} }
+  if (S.badge && !('setAppBadge' in navigator)) toast('Geht nur in der installierten App (Symbol auf dem Home-Bildschirm).');
+  save(); render();
+});
+$('remTime').addEventListener('change', e => { S.remind = e.target.value || '15:00'; save(); });
+$('remDaily').addEventListener('click', () => { deliverIcs(icsDaily(), 'Hausaufgaben-Check.ics'); });
+$('remExams').addEventListener('click', () => { const t = icsExams(); if (!t) { toast('Keine anstehenden Proben oder Termine.'); return; } deliverIcs(t, 'Proben-und-Termine.ics'); });
+
 /* ---------- Einstellungen, Sicherung ---------- */
-$('setBtn').addEventListener('click', () => { $('setDlg').hidden = false; });
+$('setBtn').addEventListener('click', () => { $('remBadge').checked = !!S.badge; $('remTime').value = S.remind || '15:00'; $('setDlg').hidden = false; });
 $('setClose').addEventListener('click', () => { $('setDlg').hidden = true; });
 $('bkSave').addEventListener('click', () => {
   const a = document.createElement('a');
@@ -625,12 +762,12 @@ $('bkFile').addEventListener('change', async e => {
   try {
     const o = JSON.parse(await f.text()); if (o.app !== 'schulplaner' || !o.data) throw 0;
     if (!window.confirm('Sicherung laden? Die jetzigen Einträge werden ersetzt.')) return;
-    S = Object.assign({ tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [] }, o.data); save(); $('setDlg').hidden = true; render(); toast('Sicherung geladen');
+    S = Object.assign({ tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [], msg: [], mat: {}, packed: {}, badge: false, remind: '15:00' }, o.data); save(); $('setDlg').hidden = true; render(); toast('Sicherung geladen');
   } catch (err) { toast('Das ist keine Hausaufgabenheft-Sicherung.'); }
 });
 $('wipe').addEventListener('click', () => {
   if (!window.confirm('Wirklich ALLE Einträge und den Stundenplan von diesem iPad löschen?')) return;
-  S = { tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [] }; try { localStorage.removeItem(KEY); } catch (e) {}
+  S = { tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [], msg: [], mat: {}, packed: {}, badge: false, remind: '15:00' }; try { localStorage.removeItem(KEY); } catch (e) {}
   $('setDlg').hidden = true; render(); toast('Alle Daten gelöscht');
 });
 
