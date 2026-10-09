@@ -28,6 +28,7 @@
   input, select, textarea { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fff; min-height: 46px; width: 100%; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
   input, select, textarea { min-width: 0; max-width: 100%; }
+  input[type=checkbox], input[type=radio] { width: 20px; height: 20px; min-height: 0; padding: 0; border: none; flex: 0 0 auto; accent-color: var(--accent); -webkit-appearance: auto; appearance: auto; }
   input[type=date] { -webkit-appearance: none; appearance: none; display: block; line-height: 1.3; text-align: left; }
   input[type=date]::-webkit-date-and-time-value { text-align: left; }
   label.f { min-width: 0; }
@@ -104,11 +105,13 @@
   }
   .tt td.tm { width: 54px; } .tt td.tm small { display: block; font-size: .68rem; line-height: 1.15; }
   .side > .card { margin-bottom: 14px; } .side .it .when { display: none; }
-  #msgs .msg { display: flex; gap: 12px; align-items: center; background: #fffbeb; border: 1.5px solid var(--sun); border-radius: 14px; padding: 10px 14px; margin-top: 10px; }
+  #msgs .msg { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: #fffbeb; border: 1.5px solid var(--sun); border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; }
+  #msgs .msg .mtx { flex: 1 1 calc(100% - 50px); }
+  #msgs .msg button { margin-left: auto; min-height: 34px; padding: 4px 12px; font-size: .85rem; }
   #msgs .msg .mtx { flex: 1; white-space: pre-wrap; font-weight: 600; } #msgs .msg .mtx small { display: block; font-weight: 400; color: var(--muted); font-size: .78rem; }
   #msgs .msg button { flex: 0 0 auto; }
   .packbox h2 { display: flex; align-items: center; gap: 8px; } .packbox h2 button { margin-left: auto; min-height: 34px; padding: 2px 10px; font-size: .85rem; }
-  .pk-s { margin: 8px 0 2px; font-weight: 800; font-size: .9rem; display: flex; align-items: center; gap: 6px; } .pk-s i { width: 10px; height: 10px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .pk-s { margin: 6px 0 0; font-weight: 800; font-size: .9rem; display: flex; align-items: center; gap: 6px; } .pk-s i { width: 10px; height: 10px; border-radius: 50%; background: var(--sc); display: inline-block; }
   .pk-c { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 3px 10px; margin: 3px 4px 0 0; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-weight: 600; font-size: .85rem; color: var(--ink); }
   .pk-c.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); text-decoration: line-through; }
   .pk-x { font-size: .85rem; margin-top: 6px; padding: 4px 8px; border-radius: 8px; background: #fafaf8; } .pk-x.ev { background: #fdf6d6; } .pk-x.exm { background: var(--red-soft); }
@@ -116,6 +119,11 @@
   .tt th .b.ev { background: var(--sun); color: var(--ink); }
   .remrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0; } .remrow input[type=time] { width: 130px; flex: 0 0 auto; }
   .sep { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+  .dups { background: var(--sun-soft); border: 1.5px solid var(--sun); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+  .dup { background: #fff; border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
+  .dup-h { font-weight: 700; font-size: .85rem; color: var(--muted); } .dup-h .sj { display: inline-block; font-size: .75rem; font-weight: 800; padding: 1px 9px; border-radius: 999px; background: color-mix(in srgb, var(--sc, var(--grey)) 22%, #fff); margin-right: 6px; color: var(--ink); }
+  .dup-c { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; } .dup-c > div { background: #fafaf8; border-radius: 8px; padding: 6px 8px; font-weight: 600; } .dup-c small { display: block; font-weight: 700; color: var(--muted); font-size: .72rem; }
+  .dup-o { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-weight: 700; cursor: pointer; } .dup-o input { width: auto; min-height: 0; } .dup-o .hint { font-weight: 400; }
   /* Listen */
   .grp > b { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
   .grp.over > b { color: var(--red); } .grp.today > b { color: var(--accent); }
@@ -161,7 +169,6 @@
     <button class="primary" id="scanBtn">📷 Empfangen</button>
     <button id="setBtn" title="Einstellungen">⚙</button>
   </header>
-  <div id="msgs"></div>
   <nav class="tabs" id="tabs">
     <button data-t="tt">🗓 Stundenplan</button>
     <button data-t="hw">📚 Hausaufgaben<span class="badge" id="hwBadge" hidden></span></button>
@@ -171,6 +178,7 @@
   <section id="pTT" class="ttlay">
     <div class="card" id="ttCard"></div>
     <div class="side">
+      <div id="msgs"></div>
       <div class="card packbox" id="pack" hidden></div>
       <div class="card soonbox"><h2>Demnächst</h2><div id="soon"></div></div>
     </div>
@@ -243,7 +251,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-10-13</p>
+    <p class="hint">Version 2026-10-15</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -613,18 +621,41 @@ $('imgFile').addEventListener('change', async e => {
 });
 
 let pending = null;
+// Mögliche Doppelungen: eigener Eintrag mit gleichem Fach und gleichem Datum wie ein neuer Lehrer-Eintrag
+const sameSubj = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+function findDups(P) {
+  const out = [];
+  (P.hw || []).forEach(([id, subject, title, given, due]) => {
+    if (!due || S.hw.some(x => x.id === 't:' + id)) return;
+    const own = S.hw.find(x => x.src !== 't' && !x.hidden && x.due === due && sameSubj(x.subject, subject) && !out.some(o => o.own === x.id));
+    if (own) out.push({ kind: 'hw', tid: 't:' + id, own: own.id, tTitle: title, oTitle: own.title, subject, date: due, merge: true });
+  });
+  (P.ex || []).forEach(([id, date, subject, title, tnote, kind]) => {
+    if (S.ex.some(x => x.id === 't:' + id)) return;
+    const ev = kind === 'ev';
+    const own = S.ex.find(x => x.src !== 't' && !x.hidden && x.date === date && (x.kind === 'ev') === ev && (ev || sameSubj(x.subject, subject)) && !out.some(o => o.own === x.id));
+    if (own) out.push({ kind: 'ex', tid: 't:' + id, own: own.id, tTitle: title, oTitle: own.title, subject, date, merge: true });
+  });
+  return out;
+}
 function showImport(P) {
   if (!P || P.app !== 'jpw') { toast('Unbekannter Code.'); return; }
-  pending = P;
+  pending = P; P.dups = findDups(P);
   const li = [];
   if (P.tt) li.push(`<li><b>Stundenplan</b>${S.tt ? ' – dein bisheriger Stundenplan wird ersetzt' : ''}</li>`);
   if (P.hw) li.push(`<li><b>${P.hw.length}</b> ${P.hw.length === 1 ? 'Hausaufgabe' : 'Hausaufgaben'}</li>`);
   if (P.ex) li.push(`<li><b>${P.ex.length}</b> ${P.ex.length === 1 ? 'Probe/Termin' : 'Proben/Termine'}</li>`);
   if (P.m && P.m.length) li.push(`<li><b>${P.m.length}</b> ${P.m.length === 1 ? 'Mitteilung' : 'Mitteilungen'}</li>`);
-  $('impInfo').innerHTML = `<p>Klasse <b>${esc(P.cls || '–')}</b>, Stand ${fmtD(P.d)}:</p><ul>${li.join('') || '<li>keine Einträge</li>'}</ul><p class="hint">Deine eigenen Einträge, Häkchen und Notizen bleiben erhalten.</p>`;
+  const dupHtml = P.dups.length ? `<div class="dups"><b>⚠ ${P.dups.length === 1 ? 'Diesen Eintrag' : 'Diese Einträge'} hast du schon selbst eingetragen:</b>${P.dups.map((d, i) => `<div class="dup">
+      <div class="dup-h">${d.subject ? `<span class="sj" style="--sc:${subjColor(d.subject)}">${esc(d.subject)}</span>` : ''}${d.kind === 'hw' ? 'bis ' : ''}${fmtDW(d.date)}</div>
+      <div class="dup-c"><div><small>Dein Eintrag</small>${esc(d.oTitle)}</div><div><small>Vom Lehrer</small>${esc(d.tTitle)}</div></div>
+      <label class="dup-o"><input type="radio" name="dup${i}" data-dup="${i}" value="1" checked> Zusammenführen <span class="hint">– der Eintrag vom Lehrer ersetzt deinen; dein Text bleibt als Notiz, dein Häkchen bleibt</span></label>
+      <label class="dup-o"><input type="radio" name="dup${i}" data-dup="${i}" value="0"> Beide behalten <span class="hint">– es sind zwei verschiedene Aufgaben</span></label></div>`).join('')}</div>` : '';
+  $('impInfo').innerHTML = `<p>Klasse <b>${esc(P.cls || '–')}</b>, Stand ${fmtD(P.d)}:</p><ul>${li.join('') || '<li>keine Einträge</li>'}</ul>${dupHtml}<p class="hint">Deine eigenen Einträge, Häkchen und Notizen bleiben erhalten.</p>`;
   $('impDlg').hidden = false;
 }
 $('impCancel').addEventListener('click', () => { $('impDlg').hidden = true; pending = null; });
+$('impInfo').addEventListener('change', e => { const r = e.target.closest('[data-dup]'); if (r && pending && pending.dups) pending.dups[+r.dataset.dup].merge = r.value === '1'; });
 $('impOk').addEventListener('click', () => {
   const P = pending; if (!P) return;
   if (P.cls) S.cls = P.cls;
@@ -646,10 +677,23 @@ $('impOk').addEventListener('click', () => {
     const gid = 't:' + id, x = S.ex.find(e => e.id === gid), add = kind === 'ev' ? { kind: 'ev', end: end || '', time: time || '' } : { kind: '', end: '', time: '' };
     if (x) Object.assign(x, { date, subject, title, tnote }, add); else { S.ex.push(Object.assign({ id: gid, src: 't', date, subject, title, tnote, note: '' }, add)); nEx++; }
   });
+  // Doppelungen zusammenführen: Lehrer-Eintrag bleibt, eigener Text wird Notiz, Häkchen wird übernommen
+  let nMerged = 0;
+  (P.dups || []).filter(d => d.merge).forEach(d => {
+    const list = d.kind === 'hw' ? S.hw : S.ex, t = list.find(x => x.id === d.tid), oi = list.findIndex(x => x.id === d.own); if (!t || oi < 0) return;
+    const o = list[oi], notes = [];
+    if (o.title && !sameSubj(o.title, t.title)) notes.push('Mein Eintrag: ' + o.title);
+    if (o.note) notes.push(o.note);
+    if (t.note) notes.unshift(t.note);
+    t.note = notes.join(' · ');
+    if (d.kind === 'hw' && o.done) t.done = true;
+    list.splice(oi, 1); nMerged++;
+    if (d.kind === 'hw') nHw--; else nEx--;
+  });
   S.msg = S.msg || [];
   (P.m || []).forEach(([id, text, until]) => { const gid = 't:' + id, m = S.msg.find(x => x.id === gid); if (m) { if (m.text !== text) m.read = false; Object.assign(m, { text, until }); } else S.msg.push({ id: gid, text, until, read: false }); });
   save(); $('impDlg').hidden = true; pending = null;
-  toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw ? ` · ${nHw} neue HA` : '') + (nEx ? ` · ${nEx} neue Proben/Termine` : ''));
+  toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw > 0 ? ` · ${nHw} neue HA` : '') + (nEx > 0 ? ` · ${nEx} neue Proben/Termine` : '') + (nMerged ? ` · ${nMerged} zusammengeführt` : ''));
   render();
 });
 
@@ -683,11 +727,11 @@ function renderPack() {
   const evs = S.ex.filter(x => !x.hidden && d >= x.date && d <= exEndD(x)), hws = S.hw.filter(h => !h.hidden && !h.done && h.due === d);
   let any = false;
   const body = subs.map(su => { const items = matItems(su.name); if (items.length) any = true;
-    return `<div class="pk-s" style="--sc:${su.color}"><i></i>${esc(su.name)}</div>${items.map(it => { const key = su.name + '|' + it; return `<button class="pk-c${done.has(key) ? ' on' : ''}" data-pk="${esc(key)}">${done.has(key) ? '✓ ' : ''}${esc(it)}</button>`; }).join('') || '<span class="hint">kein Material eingetragen</span>'}`; }).join('');
+    return `<div class="pk-s" style="--sc:${su.color}"><i></i>${esc(su.name)}</div>${items.map(it => { const key = su.name + '|' + it; return `<button class="pk-c${done.has(key) ? ' on' : ''}" data-pk="${esc(key)}">${done.has(key) ? '✓ ' : ''}${esc(it)}</button>`; }).join('') || ''}`; }).join('');
   $('pack').innerHTML = `<h2>🎒 ${lbl}<button id="matEdit" title="Material pro Fach festlegen">✎</button></h2><div class="hint" style="margin:-6px 0 4px">${fmtDW(d)}</div>
     ${evs.map(x => `<div class="pk-x ${x.kind === 'ev' ? 'ev' : 'exm'}">${x.kind === 'ev' ? '📅 ' + esc((x.time ? x.time + ' ' : '') + x.title) : '📝 Probe ' + esc(x.subject || '') + ' – ' + esc(x.title)}</div>`).join('')}
     ${hws.map(h => `<div class="pk-x">📚 Noch offen: ${esc(h.subject || '')} – ${esc(h.title)}</div>`).join('')}
-    ${body || '<p class="hint">Kein Unterricht eingetragen.</p>'}${subs.length && !any ? '<p class="hint">Tippe auf „✎ Material“ und trage ein, was du in jedem Fach brauchst (z. B. Buch, Heft, Atlas).</p>' : ''}`;
+    ${body || '<p class="hint">Kein Unterricht eingetragen.</p>'}`;
 }
 $('pack').addEventListener('click', e => {
   if (e.target.closest('#matEdit')) { openMat(); return; }
