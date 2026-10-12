@@ -74,6 +74,7 @@
   .tt th.today { color: var(--accent); }
   .tt th .dt { display: block; font-weight: 400; font-size: .75rem; }
   .tt th .b { display: block; margin: 3px auto 0; width: fit-content; max-width: 100%; border-radius: 999px; padding: 1px 8px; font-size: .72rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt th .bs { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px 4px; margin-top: 3px; } .tt th .bs:empty { display: none; } .tt th .bs .b { margin: 0; }   /* Symbole nebeneinander, wenn Platz ist */
   .tt th .b.ex { background: var(--red); } .tt th .b.hw { background: var(--accent); }
   .tt td.tm { width: 54px; text-align: center; font-size: .75rem; color: var(--muted); }
   .tt td.tm b { display: block; font-size: .95rem; color: var(--ink); }
@@ -264,7 +265,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-11-02</p>
+    <p class="hint">Version 2026-11-03</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -427,7 +428,7 @@ function renderTT() {
   const head = `<tr><th></th>${days.map(d => { const ds = addDays(monday, d);
     const ex = S.ex.filter(x => !x.hidden && ds >= x.date && ds <= exEndD(x)), hw = S.hw.filter(h => !h.hidden && !h.done && h.due === ds);
     const fr = freeDay(ds), pk = ds === packD ? packStats(ds) : null;
-    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span>${pk ? `<span class="b pk${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste für diesen Tag – antippen">🎒${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</span>` : ''}${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => x.kind === 'ev' ? `<span class="b ev">📅 ${esc(x.title)}</span>` : `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</th>`; }).join('')}</tr>`;
+    return `<th class="${thisWeek && d === today ? 'today' : ''}${fr ? ' off' : ''}">${DAYS[d]}<span class="dt">${fmtD(ds)}</span><div class="bs">${pk ? `<span class="b pk${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste für diesen Tag – antippen">🎒${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</span>` : ''}${fr ? `<span class="b fr">${esc(fr)}</span>` : ''}${ex.map(x => x.kind === 'ev' ? `<span class="b ev">📅 ${esc(x.title)}</span>` : `<span class="b ex">📝 ${esc(x.subject || x.title)}</span>`).join('')}${hw.length ? `<span class="b hw">📚 ${hw.length}</span>` : ''}</div></th>`; }).join('')}</tr>`;
   let split = false, abSeen = false;
   const body = tt.slots.map((sl, i) => {
     const cur = thisWeek && sl.start && sl.end && hm >= sl.start && hm < sl.end;
