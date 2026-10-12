@@ -247,12 +247,13 @@
 <div class="back" id="setDlg" hidden>
   <div class="dlg">
     <h2>Einstellungen</h2>
-    <p class="hint" style="margin-top:0">Alle eigenen Einträge, Häkchen und Notizen bleiben nur auf diesem iPad. Es wird nichts ins Internet geschickt.</p>
+    <p class="hint" style="margin-top:0">Deine eigenen Einträge, Häkchen und Notizen bleiben auf diesem iPad. Ist die App mit der Klasse verbunden, wird zusätzlich automatisch eine Sicherung in deinem eigenen Schul-OneDrive abgelegt (Ordner „Hausaufgabenheft“) – sonst wird nichts ins Internet geschickt.</p>
     <div id="linkBox" hidden>
       <h2>☁️ Verbindung zur Klasse</h2>
       <p class="hint" id="linkInfo" style="margin-top:0"></p>
       <p class="hint">Die App holt die Einträge der Lehrkraft beim Öffnen selbst ab – oder mit 🔄 oben. Dazu meldest du dich mit deinem Schulkonto an.</p>
-      <div class="row one"><button id="linkOff">Verbindung trennen</button></div>
+      <p class="hint" id="bkInfo"></p>
+      <div class="row"><button id="bkCloud">☁️ Sicherung aus OneDrive laden</button><button id="linkOff">Verbindung trennen</button></div>
       <hr class="sep">
     </div>
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
@@ -265,7 +266,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-11-04</p>
+    <p class="hint">Version 2026-11-05</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -879,7 +880,7 @@ function toast(msg) {
    Einmal den Verbindungs-Code der Lehrkraft scannen und mit dem Schulkonto anmelden.
    Abgeholt wird nur die geteilte Datei der Lehrkraft (ohne Schülernamen). Eigene Einträge,
    Häkchen und Notizen bleiben nur auf diesem iPad – es wird nichts hochgeladen. */
-const OD = { client: 'e149e417-7140-4653-9296-cdf00126b29b', tenant: '72c2b99c-cc12-4432-8c08-63bea5b4d5fa', scope: 'openid profile offline_access User.Read Files.Read.All' };
+const OD = { client: 'e149e417-7140-4653-9296-cdf00126b29b', tenant: '72c2b99c-cc12-4432-8c08-63bea5b4d5fa', scope: 'openid profile offline_access User.Read Files.Read.All Files.ReadWrite' };
 const OD_OK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!(window.crypto && crypto.subtle);
 const odRedirect = () => location.origin + location.pathname.replace(/index\.html$/i, '');
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
@@ -954,6 +955,7 @@ function renderSync() {
   box.hidden = !(OD_OK && S.link);
   if (!S.link) return;
   const u = lsGet('hh-od-user', null), t = S.linkSync ? new Date(S.linkSync) : null;
+  if ($('bkInfo')) $('bkInfo').textContent = S.bkTime ? `☁️ Automatische Sicherung in deinem OneDrive: zuletzt ${new Date(S.bkTime).toLocaleDateString('de-DE')} ${new Date(S.bkTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr.` : '☁️ Automatische Sicherung in deinem OneDrive: noch keine (sobald du angemeldet bist).';
   $('linkInfo').innerHTML = `Verbunden mit Klasse <b>${esc(S.cls || '–')}</b>${t ? ` · zuletzt aktualisiert ${t.toLocaleDateString('de-DE')} ${t.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : ''}${u ? `<br>Angemeldet als ${esc(u.name || u.upn)}` : ''}${S.linkErr ? `<br><span style="color:#b91c1c">Letzter Fehler: ${esc(S.linkErr)}</span>` : ''}`;
 }
 $('syncBtn').addEventListener('click', () => odSync(true));
@@ -981,6 +983,7 @@ $('linkOff').addEventListener('click', () => {
       const at = await odToken(), r = await fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,userPrincipalName', { headers: { Authorization: 'Bearer ' + at } });
       if (r.ok) { const j = await r.json(); lsSet('hh-od-user', { name: j.displayName, upn: j.userPrincipalName }); }
     } catch (e2) { toast('Anmeldung fehlgeschlagen: ' + e2.message); return; }
+    await bkOffer();
     return odSync(true);
   }
   if (S.link && (!S.linkSync || Date.now() - S.linkSync > 30000)) odSync(false);
@@ -989,6 +992,73 @@ const odDue = () => S.link && (!S.linkSync || Date.now() - S.linkSync > 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && odDue()) odSync(false); });
 // solange die App offen ist: alle 30 Sekunden nachsehen (nur kurzer Änderungsstempel, Datei nur bei Änderung)
 setInterval(() => { if (document.visibilityState === 'visible' && odDue() && (lsGet('hh-od-tok', null) || {}).rt) odSync(false); }, 10000);   // alle 30 Sekunden nachsehen
+
+/* ---------- ☁️ Automatische Sicherung im eigenen OneDrive des Kindes ----------
+   Nur wenn mit der Klasse verbunden und angemeldet. Datei: OneDrive/Hausaufgabenheft/Sicherung Hausaufgabenheft.json
+   Nach dem Zurücksetzen des iPads: Verbindungs-Code scannen, anmelden – die App bietet die Sicherung an. */
+const BK_PATH = '/me/drive/root:/Hausaufgabenheft/Sicherung Hausaufgabenheft.json';
+const bkData = () => { const d = JSON.parse(JSON.stringify(S)); delete d.linkSync; delete d.linkTag; delete d.linkErr; delete d.bkTime; return d; };
+let bkLast = null, bkBusy = false;
+const hasOwnData = () => (S.hw || []).some(h => h.src !== 't' || h.done || h.note) || (S.ex || []).some(x => x.src !== 't' || x.note) || Object.keys(S.grp || {}).length > 0 || (S.extra || []).length > 0 || Object.keys(S.mat || {}).length > 0;
+async function bkFetch(path, opts) {
+  const at = await odToken(); if (!at) throw new Error('login');
+  return fetch('https://graph.microsoft.com/v1.0' + path, { ...(opts || {}), headers: { ...((opts || {}).headers || {}), Authorization: 'Bearer ' + at } });
+}
+async function bkUpload() {
+  if (!OD_OK || !S.link || bkBusy || navigator.onLine === false) return;
+  const d = bkData(), txt = JSON.stringify(d);
+  if (txt === bkLast) return;
+  bkBusy = true;
+  try {
+    if (!(await odToken())) return;
+    await bkFetch('/me/drive/root/children', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Hausaufgabenheft', folder: {}, '@microsoft.graph.conflictBehavior': 'fail' }) }).catch(() => {});
+    const r = await bkFetch(BK_PATH + ':/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: 'schulplaner', v: 1, saved: new Date().toISOString(), data: d }) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    bkLast = txt; S.bkTime = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    renderSync();
+  } catch (e) { /* nächster Versuch beim nächsten Durchlauf */ }
+  finally { bkBusy = false; }
+}
+// gibt es eine Sicherung? → { saved, data } oder null
+async function bkFind() {
+  const m = await bkFetch(BK_PATH);
+  if (m.status === 404) return null;
+  if (!m.ok) throw new Error('HTTP ' + m.status);
+  const it = await m.json(), c = await fetch(it['@microsoft.graph.downloadUrl'], { cache: 'no-store' });
+  if (!c.ok) throw new Error('Download ' + c.status);
+  const o = JSON.parse(await c.text());
+  return o && o.app === 'schulplaner' && o.data ? o : null;
+}
+function bkRestore(o) {
+  const keep = { link: S.link, cls: S.cls };
+  S = Object.assign({ tt: null, grp: {}, hw: [], ex: [], cls: '', seq: 0, extra: [], msg: [], mat: {}, packed: {}, badge: false, remind: '15:00' }, o.data);
+  if (keep.link) { S.link = keep.link; S.cls = keep.cls || S.cls; }
+  S.linkTag = ''; S.linkSync = 0;
+  save(); bkLast = JSON.stringify(bkData()); render(); renderSync();
+  toast('Sicherung wiederhergestellt');
+  odSync(false);
+}
+// nach der Anmeldung: auf einem leeren iPad die Sicherung anbieten
+async function bkOffer() {
+  if (hasOwnData()) return;
+  try {
+    const o = await bkFind(); if (!o) return;
+    const n = (o.data.hw || []).filter(h => h.src !== 't').length, when = new Date(o.saved);
+    if (window.confirm(`In deinem OneDrive gibt es eine Sicherung vom ${when.toLocaleDateString('de-DE')}, ${when.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr${n ? ` (${n} eigene Hausaufgaben)` : ''}.\n\nJetzt wiederherstellen?`)) bkRestore(o);
+  } catch (e) {}
+}
+$('bkCloud').addEventListener('click', async () => {
+  try {
+    if (!(await odToken())) { toast('Bitte zuerst anmelden (🔄 oben).'); return; }
+    const o = await bkFind(); if (!o) { toast('In deinem OneDrive ist noch keine Sicherung.'); return; }
+    const when = new Date(o.saved);
+    if (!window.confirm(`Sicherung vom ${when.toLocaleDateString('de-DE')}, ${when.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr laden?\nDie jetzigen Einträge auf diesem iPad werden ersetzt.`)) return;
+    $('setDlg').hidden = true; bkRestore(o);
+  } catch (e) { toast('Sicherung konnte nicht geladen werden: ' + e.message); }
+});
+// regelmäßig sichern, wenn sich etwas geändert hat
+setInterval(() => { if (S.link && (lsGet('hh-od-tok', null) || {}).rt) bkUpload(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && S.link) bkUpload(); });
 
 $('hwDue').value = '';
 setTab(ui.tab);
