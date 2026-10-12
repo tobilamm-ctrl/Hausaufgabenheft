@@ -65,7 +65,7 @@
 
   /* Stundenplan */
   .weeknav { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
-  .weeknav button { min-width: 48px; }
+  .weeknav button { min-width: 48px; } .weeknav .hwplus { margin-left: 4px; white-space: nowrap; }
   #wkLbl { min-width: 210px; }
   #wkLbl.off { background: var(--sun-soft); border-color: var(--sun); }
   .ttscroll { overflow-x: auto; }
@@ -256,7 +256,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-10-18</p>
+    <p class="hint">Version 2026-10-30</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -440,7 +440,7 @@ function renderTT() {
       return `<td class="c${ss.length ? ' full' : ''}${ab ? ' ab' : ''}${off ? ' off' : ''}${td ? ' today' : ''}${td && cur && !off ? ' now' : ''}" data-key="${key}">${ss.length ? `<div class="parts${ss.length > 1 ? ' two' : ''}">${parts}</div>` : ''}${ab ? '<span class="abm">⇄</span>' : ''}</td>`;
     }).join('')}</tr>`;
   }).join('');
-  $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button>${packD && !days.some(d => addDays(monday, d) === packD) ? (() => { const pk = packStats(packD); return `<button class="pkbtn${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste">🎒 ${new Date(packD + 'T00:00').toLocaleDateString('de-DE', { weekday: 'short' })}${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</button>`; })() : ''}</div>
+  $('ttCard').innerHTML = `<div class="weeknav"><button id="wkPrev">◀</button><button id="wkLbl" class="${thisWeek ? '' : 'off'}">KW ${kw} · ${fmtD(monday)}–${fmtD(addDays(monday, days[days.length - 1]))}</button><button id="wkNext">▶</button><button class="primary hwplus" id="wkHw" title="Neue Hausaufgabe eintragen">＋ Hausaufgabe</button>${packD && !days.some(d => addDays(monday, d) === packD) ? (() => { const pk = packStats(packD); return `<button class="pkbtn${pk.total && pk.n === pk.total ? ' done' : ''}" data-pack title="Packliste">🎒 ${new Date(packD + 'T00:00').toLocaleDateString('de-DE', { weekday: 'short' })}${pk.total ? ' ' + (pk.n === pk.total ? '✓' : pk.n + '/' + pk.total) : ''}</button>`; })() : ''}</div>
     <div class="ttscroll"><table class="tt">${head}${body}</table></div>
     ${split ? '<p class="hint">Geteilte Stunde: Tippe darauf, um deine Gruppe zu wählen.</p>' : ''}
     ${abSeen ? '<p class="hint"><b>⇄ = 14-täglicher Wechsel:</b> Tippe auf die Stunde und wähle, welches Fach du in <b>dieser</b> Woche hast. Ab dann wechselt es automatisch – Ferien und Feiertage zählen dabei nicht mit.</p>' : ''}`;
@@ -449,6 +449,7 @@ $('ttCard').addEventListener('click', e => {
   if (e.target.closest('#wkPrev')) { ui.week--; return renderTT(); }
   if (e.target.closest('#wkNext')) { ui.week++; return renderTT(); }
   if (e.target.closest('#wkLbl')) { ui.week = 0; return renderTT(); }
+  if (e.target.closest('#wkHw')) { setTab('hw'); window.scrollTo(0, 0); setTimeout(() => { try { $('hwText').focus(); } catch (er) {} }, 50); return; }
   if (e.target.closest('[data-pack]')) { renderPack(); $('packDlg').hidden = false; return; }
   const td = e.target.closest('td.c'); if (!td) return;
   const ids = cellArr(S.tt.cells[td.dataset.key]); if (ids.length < 2) return;
