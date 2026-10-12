@@ -267,7 +267,7 @@
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint" id="icsHelp" hidden style="background:#fef9c3;border-radius:8px;padding:6px 8px">📅 <b>So kommt es in den Kalender:</b> Im Teilen-Menü <b>„In Dateien sichern“</b> wählen. Dann die App <b>Dateien</b> öffnen, die Kalenderdatei antippen und <b>„Zum Kalender hinzufügen“</b> wählen. (Erscheint im Teilen-Menü direkt „Kalender“, geht es auch damit.)</p>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-11-06</p>
+    <p class="hint">Version 2026-11-07</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -717,6 +717,19 @@ function applyImport(P, quiet) {
     const gid = 't:' + id, x = S.ex.find(e => e.id === gid), add = kind === 'ev' ? { kind: 'ev', end: end || '', time: time || '' } : { kind: '', end: '', time: '' };
     if (x) Object.assign(x, { date, subject, title, tnote }, add); else { S.ex.push(Object.assign({ id: gid, src: 't', date, subject, title, tnote, note: '' }, add)); nEx++; }
   });
+  // Von der Lehrkraft gelöschte Einträge auch hier entfernen (nur Einträge dieser Lehrkraft, die noch nicht vorbei sind)
+  const tid = P.tid || '', fromT = x => x.src === 't' && (!x.tsrc || !tid || x.tsrc === tid), today = todayStr();
+  let nDel = 0;
+  if (P.hw) {
+    const ids = new Set(P.hw.map(h => 't:' + h[0]));
+    S.hw = S.hw.filter(h => { const del = fromT(h) && !ids.has(h.id) && (!h.due || h.due >= today); if (del) nDel++; return !del; });
+    if (tid) S.hw.forEach(h => { if (ids.has(h.id)) h.tsrc = tid; });
+  }
+  if (P.ex) {
+    const ids = new Set(P.ex.map(x => 't:' + x[0]));
+    S.ex = S.ex.filter(x => { const del = fromT(x) && !ids.has(x.id) && exCur(x); if (del) nDel++; return !del; });
+    if (tid) S.ex.forEach(x => { if (ids.has(x.id)) x.tsrc = tid; });
+  }
   // Doppelungen zusammenführen: Lehrer-Eintrag bleibt, eigener Text wird Notiz, Häkchen wird übernommen
   let nMerged = 0;
   (P.dups || []).filter(d => d.merge).forEach(d => {
@@ -731,9 +744,10 @@ function applyImport(P, quiet) {
     if (d.kind === 'hw') nHw--; else nEx--;
   });
   S.msg = S.msg || [];
-  (P.m || []).forEach(([id, text, until, fix]) => { const gid = 't:' + id, m = S.msg.find(x => x.id === gid); if (m) { if (m.text !== text) m.read = false; Object.assign(m, { text, until, fix: !!fix }); } else S.msg.push({ id: gid, text, until, fix: !!fix, read: false }); });
+  if (P.m) { const ids = new Set(P.m.map(m => 't:' + m[0])); S.msg = S.msg.filter(m => !(String(m.id).startsWith('t:') && (!m.tsrc || !tid || m.tsrc === tid) && !ids.has(m.id))); }
+  (P.m || []).forEach(([id, text, until, fix]) => { const gid = 't:' + id, m = S.msg.find(x => x.id === gid); if (m) { if (m.text !== text) m.read = false; Object.assign(m, { text, until, fix: !!fix }); } else S.msg.push({ id: gid, text, until, fix: !!fix, read: false }); if (tid) S.msg.find(x => x.id === gid).tsrc = tid; });
   save();
-  if (!quiet) toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw > 0 ? ` · ${nHw} neue HA` : '') + (nEx > 0 ? ` · ${nEx} neue Proben/Termine` : '') + (nMerged ? ` · ${nMerged} zusammengeführt` : ''));
+  if (!quiet) toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw > 0 ? ` · ${nHw} neue HA` : '') + (nEx > 0 ? ` · ${nEx} neue Proben/Termine` : '') + (nMerged ? ` · ${nMerged} zusammengeführt` : '') + (nDel ? ` · ${nDel} von der Lehrkraft gelöscht` : ''));
   render();
 }
 
