@@ -265,8 +265,9 @@
     <p class="hint" style="margin-top:0">Nur in der installierten App. Beim ersten Mal fragt das iPad, ob Mitteilungen erlaubt sind – „Erlauben“ wählen.</p>
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
+    <p class="hint" id="icsHelp" hidden style="background:#fef9c3;border-radius:8px;padding:6px 8px">📅 <b>So kommt es in den Kalender:</b> Im Teilen-Menü <b>„In Dateien sichern“</b> wählen. Dann die App <b>Dateien</b> öffnen, die Kalenderdatei antippen und <b>„Zum Kalender hinzufügen“</b> wählen. (Erscheint im Teilen-Menü direkt „Kalender“, geht es auch damit.)</p>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-11-05</p>
+    <p class="hint">Version 2026-11-06</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -802,7 +803,16 @@ function updateBadge(n) {
 const icsDate = ds => ds.replace(/-/g, ''), icsEsc = t => String(t || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
 const icsFold = l => { const out = []; let x = [...l]; while (x.length > 60) { out.push(x.slice(0, 60).join('')); x = x.slice(60); } out.push(x.join('')); return out.join('\r\n '); };
 function icsWrap(events) { return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JPW Theres//Hausaufgabenheft//DE', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].map(icsFold).join('\r\n') + '\r\n'; }
-function deliverIcs(text, name) {
+// In der Home-Bildschirm-App öffnet iOS Kalenderdateien nicht (nur weiße Seite) – dort über „Teilen“ weitergeben
+const IOS_APP = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && (navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+async function deliverIcs(text, name) {
+  if (IOS_APP) {
+    const f = new File([text], name, { type: 'text/calendar' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      try { await navigator.share({ files: [f] }); $('icsHelp').hidden = false; return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+  }
   const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' }), url = URL.createObjectURL(blob);
   const w = window.open(url, '_blank');
   if (!w) { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
