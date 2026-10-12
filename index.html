@@ -172,6 +172,7 @@
     <h1>Hausaufgabenheft</h1>
     <span class="cls" id="clsLbl"></span>
     <span class="sp"></span>
+    <button id="syncBtn" hidden title="Neuesten Stand der Lehrkraft holen">🔄</button>
     <button class="primary" id="scanBtn">📷 Empfangen</button>
     <button id="setBtn" title="Einstellungen">⚙</button>
   </header>
@@ -245,7 +246,14 @@
 <div class="back" id="setDlg" hidden>
   <div class="dlg">
     <h2>Einstellungen</h2>
-    <p class="hint" style="margin-top:0">Alle Einträge bleiben nur auf diesem iPad. Es wird nichts ins Internet geschickt.</p>
+    <p class="hint" style="margin-top:0">Alle eigenen Einträge, Häkchen und Notizen bleiben nur auf diesem iPad. Es wird nichts ins Internet geschickt.</p>
+    <div id="linkBox" hidden>
+      <h2>☁️ Verbindung zur Klasse</h2>
+      <p class="hint" id="linkInfo" style="margin-top:0"></p>
+      <p class="hint">Die App holt die Einträge der Lehrkraft beim Öffnen selbst ab – oder mit 🔄 oben. Dazu meldest du dich mit deinem Schulkonto an.</p>
+      <div class="row one"><button id="linkOff">Verbindung trennen</button></div>
+      <hr class="sep">
+    </div>
     <div class="row"><button id="bkSave">💾 Sicherung speichern</button><button id="bkLoad">📂 Sicherung laden</button></div>
     <p class="hint">Die Sicherung ist eine Datei, z. B. zum Umziehen auf ein neues iPad.</p>
     <div class="row one"><button class="danger" id="wipe">🗑 Alle Daten auf diesem iPad löschen</button></div>
@@ -256,7 +264,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-10-30</p>
+    <p class="hint">Version 2026-11-01</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -663,6 +671,12 @@ function findDups(P) {
 }
 function showImport(P) {
   if (!P || P.app !== 'jpw') { toast('Unbekannter Code.'); return; }
+  if (P.link) {   // Verbindungs-Code: ab jetzt Änderungen selbst über OneDrive abholen
+    if (!OD_OK) { toast('Verbinden geht nur in der installierten App (Internetadresse).'); return; }
+    S.link = P.link; S.cls = P.cls || S.cls; S.linkTag = ''; S.linkSync = 0; S.linkErr = ''; save(); render(); renderSync();
+    toast('Verbunden mit Klasse ' + (P.cls || '') + ' – jetzt mit dem Schulkonto anmelden …');
+    setTimeout(() => odSync(true), 900); return;
+  }
   pending = P; P.dups = findDups(P);
   const li = [];
   if (P.tt) li.push(`<li><b>Stundenplan</b>${S.tt ? ' – dein bisheriger Stundenplan wird ersetzt' : ''}</li>`);
@@ -679,8 +693,8 @@ function showImport(P) {
 }
 $('impCancel').addEventListener('click', () => { $('impDlg').hidden = true; pending = null; });
 $('impInfo').addEventListener('change', e => { const r = e.target.closest('[data-dup]'); if (r && pending && pending.dups) pending.dups[+r.dataset.dup].merge = r.value === '1'; });
-$('impOk').addEventListener('click', () => {
-  const P = pending; if (!P) return;
+$('impOk').addEventListener('click', () => { const P = pending; if (!P) return; applyImport(P); $('impDlg').hidden = true; pending = null; });
+function applyImport(P, quiet) {
   if (P.cls) S.cls = P.cls;
   if (P.tt) {
     const old = S.tt, tt = { sat: !!P.tt.sat, slots: P.tt.sl.map(([label, start, end, pz]) => ({ label, start, end, pause: !!pz })), subjects: P.tt.su.map(([id, name, color, mat]) => ({ id, name, color, mat: mat || '' })), cells: P.tt.c || {} };
@@ -715,10 +729,10 @@ $('impOk').addEventListener('click', () => {
   });
   S.msg = S.msg || [];
   (P.m || []).forEach(([id, text, until, fix]) => { const gid = 't:' + id, m = S.msg.find(x => x.id === gid); if (m) { if (m.text !== text) m.read = false; Object.assign(m, { text, until, fix: !!fix }); } else S.msg.push({ id: gid, text, until, fix: !!fix, read: false }); });
-  save(); $('impDlg').hidden = true; pending = null;
-  toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw > 0 ? ` · ${nHw} neue HA` : '') + (nEx > 0 ? ` · ${nEx} neue Proben/Termine` : '') + (nMerged ? ` · ${nMerged} zusammengeführt` : ''));
+  save();
+  if (!quiet) toast('Übernommen' + (P.tt ? ' · Stundenplan' : '') + (nHw > 0 ? ` · ${nHw} neue HA` : '') + (nEx > 0 ? ` · ${nEx} neue Proben/Termine` : '') + (nMerged ? ` · ${nMerged} zusammengeführt` : ''));
   render();
-});
+}
 
 /* ---------- Mitteilungen vom Lehrer ---------- */
 function renderMsgs() {
@@ -823,7 +837,7 @@ $('remDaily').addEventListener('click', () => { deliverIcs(icsDaily(), 'Hausaufg
 $('remExams').addEventListener('click', () => { const t = icsExams(); if (!t) { toast('Keine anstehenden Proben oder Termine.'); return; } deliverIcs(t, 'Proben-und-Termine.ics'); });
 
 /* ---------- Einstellungen, Sicherung ---------- */
-$('setBtn').addEventListener('click', () => { $('remBadge').checked = !!S.badge; $('remTime').value = S.remind || '15:00'; $('setDlg').hidden = false; });
+$('setBtn').addEventListener('click', () => { renderSync(); $('remBadge').checked = !!S.badge; $('remTime').value = S.remind || '15:00'; $('setDlg').hidden = false; });
 $('setClose').addEventListener('click', () => { $('setDlg').hidden = true; });
 $('bkSave').addEventListener('click', () => {
   const a = document.createElement('a');
@@ -858,6 +872,118 @@ function toast(msg) {
   let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
   t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
 }
+
+
+/* ---------- ☁️ Mit der Klasse verbunden (OneDrive): Änderungen der Lehrkraft selbst abholen ----------
+   Einmal den Verbindungs-Code der Lehrkraft scannen und mit dem Schulkonto anmelden.
+   Abgeholt wird nur die geteilte Datei der Lehrkraft (ohne Schülernamen). Eigene Einträge,
+   Häkchen und Notizen bleiben nur auf diesem iPad – es wird nichts hochgeladen. */
+const OD = { client: 'e149e417-7140-4653-9296-cdf00126b29b', tenant: '72c2b99c-cc12-4432-8c08-63bea5b4d5fa', scope: 'openid profile offline_access User.Read Files.Read.All' };
+const OD_OK = (location.protocol === 'https:' || location.hostname === 'localhost') && !!(window.crypto && crypto.subtle);
+const odRedirect = () => location.origin + location.pathname.replace(/index\.html$/i, '');
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const b64u = buf => { let s = ''; new Uint8Array(buf).forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const noSilent = () => { try { return sessionStorage.getItem('hh-od-nosilent') === '1'; } catch (e) { return true; } };
+let odSyncing = false, odNeedLogin = false;
+async function odLogin(silent) {
+  const ver = b64u(crypto.getRandomValues(new Uint8Array(48)));
+  const ch = b64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ver)));
+  const st = b64u(crypto.getRandomValues(new Uint8Array(16)));
+  lsSet('hh-od-auth', { ver, st, silent: !!silent });
+  const user = lsGet('hh-od-user', null);
+  const q = { client_id: OD.client, response_type: 'code', redirect_uri: odRedirect(), scope: OD.scope, state: st, code_challenge: ch, code_challenge_method: 'S256', response_mode: 'query' };
+  if (user && user.upn) q.login_hint = user.upn;
+  if (silent) q.prompt = 'none';
+  location.assign(`https://login.microsoftonline.com/${OD.tenant}/oauth2/v2.0/authorize?` + new URLSearchParams(q));
+}
+async function odTokenReq(params) {
+  const r = await fetch(`https://login.microsoftonline.com/${OD.tenant}/oauth2/v2.0/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: OD.client, scope: OD.scope, ...params }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) throw new Error(j.error_description ? j.error_description.split('\r')[0] : (j.error || 'HTTP ' + r.status));
+  const old = lsGet('hh-od-tok', {}) || {};
+  lsSet('hh-od-tok', { at: j.access_token, exp: Date.now() + (j.expires_in - 120) * 1000, rt: j.refresh_token || old.rt });
+  odNeedLogin = false;
+  return j.access_token;
+}
+async function odToken() {
+  const t = lsGet('hh-od-tok', null); if (!t) return null;
+  if (t.at && Date.now() < t.exp) return t.at;
+  if (t.rt) { try { return await odTokenReq({ grant_type: 'refresh_token', refresh_token: t.rt }); } catch (e) { lsSet('hh-od-tok', null); } }
+  return null;
+}
+const shareId = url => 'u!' + btoa(unescape(encodeURIComponent(url))).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-');
+// Stand der Lehrkraft holen. manual = Knopf gedrückt (dann ggf. Anmeldeseite zeigen)
+async function odSync(manual) {
+  if (!OD_OK || !S.link || odSyncing) return;
+  odSyncing = true; renderSync();
+  try {
+    let at = await odToken();
+    if (!at) {
+      odNeedLogin = true; renderSync();
+      if (manual) return odLogin(false);
+      if (lsGet('hh-od-user', null) && !noSilent() && navigator.onLine !== false) return odLogin(true);
+      return;
+    }
+    let r = await fetch('https://graph.microsoft.com/v1.0/shares/' + shareId(S.link) + '/driveItem', { headers: { Authorization: 'Bearer ' + at, Prefer: 'redeemSharingLinkIfNecessary' } });
+    if (r.status === 401) { lsSet('hh-od-tok', { ...(lsGet('hh-od-tok', {}) || {}), at: null, exp: 0 }); odSyncing = false; return odSync(manual); }
+    if (r.status === 404 || r.status === 403) { if (manual) toast('Die Datei der Lehrkraft ist nicht (mehr) erreichbar. Bitte den Verbindungs-Code neu scannen.'); S.linkErr = 'nicht erreichbar'; save(); return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const it = await r.json();
+    if (!manual && it.eTag && it.eTag === S.linkTag) { S.linkSync = Date.now(); S.linkErr = ''; save(); return; }
+    const c = await fetch(it['@microsoft.graph.downloadUrl'], { cache: 'no-store' });
+    if (!c.ok) throw new Error('Download ' + c.status);
+    const P = JSON.parse(await c.text());
+    if (!P || P.app !== 'jpw') throw new Error('unbekannte Datei');
+    S.linkTag = it.eTag; S.linkSync = Date.now(); S.linkErr = ''; save();
+    P.dups = findDups(P);
+    if (P.dups.length) showImport(P); else { applyImport(P, true); if (manual) toast('Aktualisiert – Stand ' + fmtD(P.d)); }
+  } catch (e) {
+    S.linkErr = e.message; save();
+    if (manual) toast(navigator.onLine === false ? 'Keine Internetverbindung.' : 'Aktualisieren hat nicht geklappt: ' + e.message);
+  } finally { odSyncing = false; renderSync(); }
+}
+function renderSync() {
+  const b = $('syncBtn'); if (!b) return;
+  b.hidden = !(OD_OK && S.link);
+  b.textContent = odSyncing ? '⏳' : odNeedLogin ? '🔄 Anmelden' : '🔄';
+  b.title = odNeedLogin ? 'Mit dem Schulkonto anmelden und aktualisieren' : 'Neuesten Stand der Lehrkraft holen';
+  const box = $('linkBox'); if (!box) return;
+  box.hidden = !(OD_OK && S.link);
+  if (!S.link) return;
+  const u = lsGet('hh-od-user', null), t = S.linkSync ? new Date(S.linkSync) : null;
+  $('linkInfo').innerHTML = `Verbunden mit Klasse <b>${esc(S.cls || '–')}</b>${t ? ` · zuletzt aktualisiert ${t.toLocaleDateString('de-DE')} ${t.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : ''}${u ? `<br>Angemeldet als ${esc(u.name || u.upn)}` : ''}${S.linkErr ? `<br><span style="color:#b91c1c">Letzter Fehler: ${esc(S.linkErr)}</span>` : ''}`;
+}
+$('syncBtn').addEventListener('click', () => odSync(true));
+$('linkOff').addEventListener('click', () => {
+  if (!confirm('Verbindung zur Klasse trennen? Deine Einträge bleiben erhalten, es kommen aber keine Änderungen der Lehrkraft mehr automatisch an.')) return;
+  S.link = ''; S.linkTag = ''; S.linkSync = 0; save(); lsSet('hh-od-tok', null); lsSet('hh-od-user', null); renderSync();
+});
+// Start: Rückkehr von der Microsoft-Anmeldung, sonst bei Bedarf aktualisieren
+(async function odStart() {
+  renderSync();
+  if (!OD_OK) return;
+  const p = new URLSearchParams(location.search), code = p.get('code'), err = p.get('error');
+  if (code || err) {
+    const a = lsGet('hh-od-auth', null); lsSet('hh-od-auth', null);
+    history.replaceState(null, '', odRedirect());
+    if (err) {
+      try { sessionStorage.setItem('hh-od-nosilent', '1'); } catch (e) {}
+      odNeedLogin = true; renderSync();
+      if (!(a && a.silent)) toast('Anmeldung nicht abgeschlossen.');
+      return;
+    }
+    if (!a || a.st !== p.get('state')) { toast('Anmeldung fehlgeschlagen – bitte nochmal.'); return; }
+    try {
+      await odTokenReq({ grant_type: 'authorization_code', code, redirect_uri: odRedirect(), code_verifier: a.ver });
+      const at = await odToken(), r = await fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,userPrincipalName', { headers: { Authorization: 'Bearer ' + at } });
+      if (r.ok) { const j = await r.json(); lsSet('hh-od-user', { name: j.displayName, upn: j.userPrincipalName }); }
+    } catch (e2) { toast('Anmeldung fehlgeschlagen: ' + e2.message); return; }
+    return odSync(true);
+  }
+  if (S.link && (!S.linkSync || Date.now() - S.linkSync > 2 * 60000)) odSync(false);
+})();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.link && (!S.linkSync || Date.now() - S.linkSync > 2 * 60000)) odSync(false); });
 
 $('hwDue').value = '';
 setTab(ui.tab);
