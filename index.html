@@ -264,7 +264,7 @@
     <div class="remrow">Tägliche Erinnerung (Mo–Fr, nicht in den Ferien) um <input type="time" id="remTime" value="15:00"> <button id="remDaily">📅 In den Kalender</button></div>
     <div class="remrow"><button id="remExams">📅 Proben &amp; Termine in den Kalender</button></div>
     <p class="hint">Der Kalender des iPads erinnert dann von selbst – auch wenn die App geschlossen ist. Bei Proben: zwei Tage und einen Tag vorher um 16 Uhr. Nach neuen Proben einfach nochmal tippen.</p>
-    <p class="hint">Version 2026-11-01</p>
+    <p class="hint">Version 2026-11-02</p>
     <div class="btns"><button class="primary" id="setClose">Fertig</button></div>
   </div>
 </div>
@@ -984,7 +984,10 @@ $('linkOff').addEventListener('click', () => {
   }
   if (S.link && (!S.linkSync || Date.now() - S.linkSync > 2 * 60000)) odSync(false);
 })();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.link && (!S.linkSync || Date.now() - S.linkSync > 2 * 60000)) odSync(false); });
+const odDue = () => S.link && (!S.linkSync || Date.now() - S.linkSync > 2 * 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && odDue()) odSync(false); });
+// solange die App offen ist: alle paar Minuten nachsehen (nur kurzer Änderungsstempel, Datei nur bei Änderung)
+setInterval(() => { if (document.visibilityState === 'visible' && odDue() && (lsGet('hh-od-tok', null) || {}).rt) odSync(false); }, 60000);
 
 $('hwDue').value = '';
 setTab(ui.tab);
